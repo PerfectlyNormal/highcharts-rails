@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.email       = ["perchr@northblue.org"]
   s.homepage    = "http://northblue.org/"
   s.summary     = %q{Gem for easily adding Highcharts to the Rails Asset Pipeline}
-  s.description = %q{Gem that includes Highcharts, Interactive JavaScript charts for your web projects, in the Rails Asset Pipeline introduced in Rails 3.1}
+  s.description = %q{Gem that includes Highcharts (Interactive JavaScript charts for your web projects), in the Rails Asset Pipeline introduced in Rails 3.1}
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")

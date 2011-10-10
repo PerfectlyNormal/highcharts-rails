@@ -1,7 +1,7 @@
 # Highcharts-Rails
 
 This gem just includes [Highcharts](http://highcharts.com/) as an asset in the Rails 3.1 asset pipeline.
-Make sure you have a [valid license](http://highcharts.com/license) to use Highcharts.
+Highcharts is not free for commercial use, so make sure you have a [valid license](http://highcharts.com/license) to use Highcharts.
 
 ## Installation
 
