@@ -32,3 +32,9 @@ Or one of the themes
     //= require highcharts/themes/grid
 
 Other than that, refer to the [Highcharts documentation](http://highcharts.com/documentation/how-to-use)
+
+## Licensing
+
+Highcharts, which makes up the majority of this gem, has [its own, separate licensing](http://highcharts.com/license).
+
+The gem itself is released under the MIT license
