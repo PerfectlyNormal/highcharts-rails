@@ -12,21 +12,20 @@ Highcharts.theme = {
 				[0, 'rgb(255, 255, 255)'],
 				[1, 'rgb(240, 240, 255)']
 			]
-		}
-,
+		},
 		borderWidth: 2,
 		plotBackgroundColor: 'rgba(255, 255, 255, .9)',
 		plotShadow: true,
 		plotBorderWidth: 1
 	},
 	title: {
-		style: { 
+		style: {
 			color: '#000',
 			font: 'bold 16px "Trebuchet MS", Verdana, sans-serif'
 		}
 	},
 	subtitle: {
-		style: { 
+		style: {
 			color: '#666666',
 			font: 'bold 12px "Trebuchet MS", Verdana, sans-serif'
 		}
@@ -48,7 +47,7 @@ Highcharts.theme = {
 				fontSize: '12px',
 				fontFamily: 'Trebuchet MS, Verdana, sans-serif'
 
-			}				
+			}
 		}
 	},
 	yAxis: {
@@ -69,11 +68,11 @@ Highcharts.theme = {
 				fontWeight: 'bold',
 				fontSize: '12px',
 				fontFamily: 'Trebuchet MS, Verdana, sans-serif'
-			}				
+			}
 		}
 	},
 	legend: {
-		itemStyle: {			
+		itemStyle: {
 			font: '9pt Trebuchet MS, Verdana, sans-serif',
 			color: 'black'
 
@@ -94,4 +93,4 @@ Highcharts.theme = {
 
 // Apply the theme
 var highchartsOptions = Highcharts.setOptions(Highcharts.theme);
-	
+
