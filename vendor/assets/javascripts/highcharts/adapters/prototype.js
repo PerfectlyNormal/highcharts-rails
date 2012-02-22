@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v2.1.9 (2011-11-11)
+ * @license Highcharts JS v2.2.0 (2012-02-16)
  * Prototype adapter
  *
  * @author Michael Nelson, Torstein Hønsi.
@@ -8,13 +8,8 @@
  * Highcharts license: www.highcharts.com/license.
  */
 
-/*
- * Known issues:
- *    - Some grid lines land in wrong position - http://jsfiddle.net/highcharts/jaRhY/28
- */
-
 // JSLint options:
-/*global Effect, Class, Event, $, $A */
+/*global Effect, Class, Event, Element, $, $$, $A */
 
 // Adapter interface between prototype and the Highcharts charting library
 var HighchartsAdapter = (function () {
@@ -43,7 +38,7 @@ return {
 
 					this.element = element;
 					this.key = attr;
-					from = element.attr(attr);
+					from = element.attr ? element.attr(attr) : $(element).getStyle(attr);
 
 					// special treatment for paths
 					if (attr === 'd') {
@@ -79,13 +74,23 @@ return {
 					this.element._highchart_animation[this.key] = this;
 				},
 				update: function (position) {
-					var paths = this.paths;
+					var paths = this.paths,
+						element = this.element,
+						obj;
 
 					if (paths) {
 						position = pathAnim.step(paths[0], paths[1], position, this.toD);
 					}
 
-					this.element.attr(this.options.attribute, position);
+					if (element.attr) { // SVGElement
+						element.attr(this.options.attribute, position);
+
+					} else { // HTML, #409
+						obj = {};
+						obj[this.options.attribute] = position;
+						$(element).setStyle(obj);
+					}
+
 				},
 				finish: function () {
 					// Delete the property that holds this animation now that it is finished.
@@ -93,6 +98,19 @@ return {
 					delete this.element._highchart_animation[this.key];
 				}
 			});
+		}
+	},
+
+	/**
+	 * Downloads a script and executes a callback when done.
+	 * @param {String} scriptLocation
+	 * @param {Function} callback
+	 */
+	getScript: function (scriptLocation, callback) {
+		var head = $$('head')[0]; // Returns an array, so pick the first element.
+		if (head) {
+			// Append a new 'script' element, set its type and src attributes, add a 'load' handler that calls the callback
+			head.appendChild(new Element('script', { type: 'text/javascript', src: scriptLocation}).observe('load', callback));
 		}
 	},
 
@@ -142,8 +160,8 @@ return {
 			}
 		}
 
-		if (!el.attr) {
-			throw 'Todo: implement animate DOM objects';
+		if (!el.attr) { // HTML element, #409
+			$(el).setStyle(params);
 		}
 	},
 
@@ -162,6 +180,15 @@ return {
 	// um.. each
 	each: function (arr, fn) {
 		$A(arr).each(fn);
+	},
+
+	/**
+	 * Get the cumulative offset relative to the top left of the page. This method, unlike its
+	 * jQuery and MooTools counterpart, still suffers from issue #208 regarding the position
+	 * of a chart within a fixed container.
+	 */
+	offset: function (el) {
+		return $(el).cumulativeOffset();
 	},
 
 	// fire an event based on an event name (event) and an object (el).

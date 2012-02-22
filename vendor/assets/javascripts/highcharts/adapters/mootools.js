@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v2.1.9 (2011-11-11)
+ * @license Highcharts JS v2.2.0 (2012-02-16)
  * MooTools adapter
  *
  * (c) 2010-2011 Torstein Hønsi
@@ -13,6 +13,7 @@
 (function () {
 
 var win = window,
+	doc = document,
 	mooVersion = win.MooTools.version.substring(0, 3), // Get the first three characters of the version number
 	legacy = mooVersion === '1.2' || mooVersion === '1.1', // 1.1 && 1.2 considered legacy, 1.3 is not.
 	legacyEvent = legacy || mooVersion === '1.3', // In versions 1.1 - 1.3 the event class is named Event, in newer versions it is named DOMEvent.
@@ -69,6 +70,23 @@ win.HighchartsAdapter = {
 	},
 
 	/**
+	 * Downloads a script and executes a callback when done.
+	 * @param {String} scriptLocation
+	 * @param {Function} callback
+	 */
+	getScript: function (scriptLocation, callback) {
+		// We cannot assume that Assets class from mootools-more is available so instead insert a script tag to download script.
+		var head = doc.getElementsByTagName('head')[0];
+		var script = doc.createElement('script');
+
+		script.type = 'text/javascript';
+		script.src = scriptLocation;
+		script.onload = callback;
+
+		head.appendChild(script);
+	},
+
+	/**
 	 * Animate a HTML element or SVG element wrapper
 	 * @param {Object} el
 	 * @param {Object} params
@@ -87,7 +105,7 @@ win.HighchartsAdapter = {
 				el.attr.call(el, args[0], args[1][0]);
 			};
 			// dirty hack to trick Moo into handling el as an element wrapper
-			el.$family = el.uid = true;
+			el.$family = function () { return true; };
 		}
 
 		// stop running animations
@@ -100,6 +118,11 @@ win.HighchartsAdapter = {
 				transition: Fx.Transitions.Quad.easeInOut
 			}, options)
 		);
+
+		// Make sure that the element reference is set when animating svg elements
+		if (isSVGElement) {
+			effect.element = el;
+		}
 
 		// special treatment for paths
 		if (params.d) {
@@ -125,7 +148,7 @@ win.HighchartsAdapter = {
 	each: function (arr, fn) {
 		return legacy ?
 			$each(arr, fn) :
-			arr.each(fn);
+			Array.each(arr, fn);
 	},
 
 	/**
@@ -169,6 +192,17 @@ win.HighchartsAdapter = {
 		}
 
 		return ret;
+	},
+
+	/**
+	 * Get the offset of an element relative to the top left corner of the web page
+	 */
+	offset: function (el) {
+		var offsets = $(el).getOffsets();
+		return {
+			left: offsets.x,
+			top: offsets.y
+		};
 	},
 
 	/**
