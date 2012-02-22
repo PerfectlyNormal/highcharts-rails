@@ -7,8 +7,12 @@ Highcharts is not free for commercial use, so make sure you have a [valid licens
 
 Add the gem to the Gemfile
 
-    gem "highcharts-rails", "~> 2.1.9"
+    gem "highcharts-rails", "~> 2.2.0"
     # The gem version mirrors the included version of Highcharts
+
+## Changes
+
+Refer to the [Highcharts changelog](http://www.highcharts.com/documentation/changelog#highcharts)
 
 ## Usage
 
