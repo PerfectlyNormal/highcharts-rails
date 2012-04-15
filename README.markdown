@@ -10,6 +10,10 @@ Add the gem to the Gemfile
     gem "highcharts-rails", "~> 2.2.1"
     # The gem version mirrors the included version of Highcharts
 
+## Changes
+
+Refer to the [Highcharts changelog](http://www.highcharts.com/documentation/changelog#highcharts)
+
 ## Usage
 
 In your JavaScript manifest (e.g. `application.js`)
