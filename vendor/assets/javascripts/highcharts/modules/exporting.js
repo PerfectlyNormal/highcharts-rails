@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v2.2.0 (2012-02-16)
+ * @license Highcharts JS v2.2.1 (2012-03-15)
  * Exporting module
  *
  * (c) 2010-2011 Torstein Hønsi
@@ -270,9 +270,8 @@ extend(Chart.prototype, {
 			.replace(/jQuery[0-9]+="[^"]+"/g, '')
 			.replace(/isTracker="[^"]+"/g, '')
 			.replace(/url\([^#]+#/g, 'url(#')
-			/*.replace(/<svg /, '<svg xmlns:xlink="http://www.w3.org/1999/xlink" ')
-			.replace(/ href=/, ' xlink:href=')
-			.replace(/preserveAspectRatio="none">/g, 'preserveAspectRatio="none"/>')*/
+			.replace(/<svg /, '<svg xmlns:xlink="http://www.w3.org/1999/xlink" ')
+			.replace(/ href=/g, ' xlink:href=')
 			/* This fails in IE < 8
 			.replace(/([0-9]+)\.([0-9]+)/g, function(s1, s2, s3) { // round off to save weight
 				return s2 +'.'+ s3[0];
@@ -283,6 +282,10 @@ extend(Chart.prototype, {
 			.replace(/&shy;/g,  '\u00AD') // soft hyphen
 
 			// IE specific
+			.replace(/<IMG /g, '<image ')
+			.replace(/height=([^" ]+)/g, 'height="$1"')
+			.replace(/width=([^" ]+)/g, 'width="$1"')
+			.replace(/hc-svg-href="([^"]+)">/g, 'xlink:href="$1"/>')
 			.replace(/id=([^" >]+)/g, 'id="$1"')
 			.replace(/class=([^" ]+)/g, 'class="$1"')
 			.replace(/ transform /g, ' ')
@@ -603,7 +606,7 @@ extend(Chart.prototype, {
 				btnOptions.symbol,
 				btnOptions.symbolX - (symbolSize / 2),
 				btnOptions.symbolY - (symbolSize / 2),
-				symbolSize,				
+				symbolSize,
 				symbolSize
 			)
 			.align(btnOptions, true)
@@ -656,7 +659,7 @@ function crisp(arr) {
 	var i = arr.length;
 	while (i--) {
 		if (typeof arr[i] === 'number') {
-			arr[i] = Math.round(arr[i]) - 0.5;		
+			arr[i] = Math.round(arr[i]) - 0.5;
 		}
 	}
 	return arr;

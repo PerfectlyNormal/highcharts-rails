@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v2.2.0 (2012-02-16)
+ * @license Highcharts JS v2.2.1 (2012-03-15)
  * Prototype adapter
  *
  * @author Michael Nelson, Torstein Hønsi.
@@ -146,6 +146,7 @@ return {
 		options = options || {};
 		options.delay = 0;
 		options.duration = (options.duration || 500) / 1000;
+		options.afterFinish = options.complete;
 
 		// animate wrappers and DOM elements
 		if (hasEffect) {
@@ -155,8 +156,13 @@ return {
 				fx = new Effect.HighchartsTransition($(el), key, params[key], options);
 			}
 		} else {
-			for (key in params) {
-				el.attr(key, params[key]);
+			if (el.attr) { // #409 without effects
+				for (key in params) {
+					el.attr(key, params[key]);
+				}
+			}
+			if (options.complete) {
+				options.complete();
 			}
 		}
 
