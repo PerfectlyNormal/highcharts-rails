@@ -2,7 +2,7 @@
 // @compilation_level SIMPLE_OPTIMIZATIONS
 
 /**
- * @license Highcharts JS v2.2.1 (2012-03-15)
+ * @license Highcharts JS v2.2.2 (2012-04-26)
  *
  * (c) 2009-2011 Torstein Hønsi
  *
@@ -124,6 +124,7 @@ var UNDEFINED,
 	addEvent = adapter.addEvent,
 	removeEvent = adapter.removeEvent,
 	fireEvent = adapter.fireEvent,
+	washMouseEvent = adapter.washMouseEvent,
 	animate = adapter.animate,
 	stop = adapter.stop,
 
@@ -749,9 +750,14 @@ function placeBox(boxWidth, boxHeight, outerLeft, outerTop, outerWidth, outerHei
 		if (alignedRight && pointY >= y && pointY <= (y + boxHeight)) {
 			y = pointY + outerTop + distance; // below
 		}
-	} else if (y + boxHeight > outerTop + outerHeight) {
+	}
+
+	// Now if the tooltip is below the chart, move it up. It's better to cover the
+	// point than to disappear outside the chart. #834.
+	if (y + boxHeight > outerTop + outerHeight) {
 		y = outerTop + outerHeight - boxHeight - distance; // below
 	}
+
 
 	return {x: x, y: y};
 }
@@ -929,9 +935,10 @@ pathAnim = {
 		}
 
 		// if shifting points, prepend a dummy point to the end path
-		if (shift === 1) {
-
-			end = [].concat(end).splice(0, numParams).concat(end);
+		if (shift <= end.length / numParams) {
+			while (shift--) {
+				end = [].concat(end).splice(0, numParams).concat(end);
+			}
 		}
 		elem.shift = 0; // reset for following animations
 
@@ -1146,6 +1153,13 @@ if (!globalAdapter && win.jQuery) {
 	};
 
 	/**
+	 * Extension method needed for MooTools
+	 */
+	washMouseEvent = function (e) {
+		return e;
+	};
+
+	/**
 	 * Animate a HTML element or SVG element wrapper
 	 * @param {Object} el
 	 * @param {Object} params
@@ -1270,7 +1284,7 @@ defaultOptions = {
 	},
 	global: {
 		useUTC: true,
-		canvasToolsURL: 'http://code.highcharts.com/2.2.1/modules/canvas-tools.js'
+		canvasToolsURL: 'http://code.highcharts.com/2.2.2/modules/canvas-tools.js'
 	},
 	chart: {
 		//animation: true,
@@ -1673,8 +1687,8 @@ defaultBottomAxisOptions = { // horizontal axis
 	labels: {
 		align: 'center',
 		x: 0,
-		y: 14,
-		overflow: 'justify' // docs
+		y: 14
+		// overflow: undefined // docs - can be 'justify'
 		// staggerLines: null
 	},
 	title: {
@@ -2008,6 +2022,7 @@ SVGElement.prototype = {
 			nodeName = element.nodeName,
 			renderer = wrapper.renderer,
 			skipAttr,
+			titleNode,
 			attrSetters = wrapper.attrSetters,
 			shadows = wrapper.shadows,
 			hasSetSymbolSize,
@@ -2143,9 +2158,12 @@ SVGElement.prototype = {
 
 					// Title requires a subnode, #431
 					} else if (key === 'title') {
-						var title = doc.createElementNS(SVG_NS, 'title');
-						title.appendChild(doc.createTextNode(value));
-						element.appendChild(title);
+						titleNode = element.getElementsByTagName('title')[0];
+						if (!titleNode) {
+							titleNode = doc.createElementNS(SVG_NS, 'title');
+							element.appendChild(titleNode);
+						}
+						titleNode.textContent = value;
 					}
 
 					// jQuery animate changes case
@@ -2159,7 +2177,7 @@ SVGElement.prototype = {
 					}
 
 					// symbols
-					if (wrapper.symbolName && /^(x|y|r|start|end|innerR|anchorX|anchorY)/.test(key)) {
+					if (wrapper.symbolName && /^(x|y|width|height|r|start|end|innerR|anchorX|anchorY)/.test(key)) {
 
 
 						if (!hasSetSymbolSize) {
@@ -2951,6 +2969,32 @@ SVGRenderer.prototype = {
 		renderer.gradients = {}; // Object where gradient SvgElements are stored
 
 		renderer.setSize(width, height, false);
+
+
+
+		// Issue 110 workaround:
+		// In Firefox, if a div is positioned by percentage, its pixel position may land
+		// between pixels. The container itself doesn't display this, but an SVG element
+		// inside this container will be drawn at subpixel precision. In order to draw
+		// sharp lines, this must be compensated for. This doesn't seem to work inside
+		// iframes though (like in jsFiddle).
+		var subPixelFix, rect;
+		if (isFirefox && container.getBoundingClientRect) {
+			renderer.subPixelFix = subPixelFix = function () {
+				css(container, { left: 0, top: 0 });
+				rect = container.getBoundingClientRect();
+				css(container, {
+					left: (-(rect.left - pInt(rect.left))) + PX,
+					top: (-(rect.top - pInt(rect.top))) + PX
+				});
+			};
+
+			// run the fix now
+			subPixelFix();
+
+			// run it on resize
+			addEvent(win, 'resize', subPixelFix);
+		}
 	},
 
 	/**
@@ -2971,6 +3015,9 @@ SVGRenderer.prototype = {
 		if (rendererDefs) {
 			renderer.defs = rendererDefs.destroy();
 		}
+
+		// Remove sub pixel fix handler
+		removeEvent(win, 'resize', renderer.subPixelFix);
 
 		renderer.alignedObjects = null;
 
@@ -3014,7 +3061,14 @@ SVGRenderer.prototype = {
 			textLineHeight = textStyles && textStyles.lineHeight,
 			lastLine,
 			GET_COMPUTED_STYLE = 'getComputedStyle',
-			i = childNodes.length;
+			i = childNodes.length,
+			linePositions = [];
+
+		// Needed in IE9 because it doesn't report tspan's offsetHeight (#893)
+		function getLineHeightByBBox(lineNo) {
+			linePositions[lineNo] = textNode.getBBox().height;
+			return mathRound(linePositions[lineNo] - (linePositions[lineNo - 1] || 0));
+		}
 
 		// remove old text
 		while (i--) {
@@ -3092,7 +3146,7 @@ SVGRenderer.prototype = {
 								pInt(win[GET_COMPUTED_STYLE](lastLine, null).getPropertyValue('line-height'));
 
 							if (!lineHeight || isNaN(lineHeight)) {
-								lineHeight = textLineHeight || lastLine.offsetHeight || 18;
+								lineHeight = textLineHeight || lastLine.offsetHeight || getLineHeightByBBox(lineNo) || 18;
 							}
 							attr(tspan, 'dy', lineHeight);
 						}
@@ -3453,7 +3507,8 @@ SVGRenderer.prototype = {
 
 			imageRegex = /^url\((.*?)\)$/,
 			imageSrc,
-			imageSize;
+			imageSize,
+			centerImage;
 
 		if (path) {
 
@@ -3474,14 +3529,19 @@ SVGRenderer.prototype = {
 		// image symbols
 		} else if (imageRegex.test(symbol)) {
 
-			var centerImage = function (img, size) {
+			// On image load, set the size and position
+			centerImage = function (img, size) {
 				img.attr({
 					width: size[0],
 					height: size[1]
-				}).translate(
-					-mathRound(size[0] / 2),
-					-mathRound(size[1] / 2)
-				);
+				});
+
+				if (!img.alignByTranslate) { // #185
+					img.translate(
+						-mathRound(size[0] / 2),
+						-mathRound(size[1] / 2)
+					);
+				}
 			};
 
 			imageSrc = symbol.match(imageRegex)[1];
@@ -3889,11 +3949,12 @@ SVGRenderer.prototype = {
 	 * @param {Number} anchorY
 	 * @param {Boolean} baseline Whether to position the label relative to the text baseline,
 	 *    like renderer.text, or to the upper border of the rectangle.
+	 * @param {String} className Class name for the group
 	 */
-	label: function (str, x, y, shape, anchorX, anchorY, useHTML, baseline) {
+	label: function (str, x, y, shape, anchorX, anchorY, useHTML, baseline, className) {
 
 		var renderer = this,
-			wrapper = renderer.g(),
+			wrapper = renderer.g(className),
 			text = renderer.text('', 0, 0, useHTML)
 				.attr({
 					zIndex: 1
@@ -3901,7 +3962,7 @@ SVGRenderer.prototype = {
 				.add(wrapper),
 			box,
 			bBox,
-			align = 'left',
+			alignFactor = 0,
 			padding = 3,
 			width,
 			height,
@@ -3923,8 +3984,8 @@ SVGRenderer.prototype = {
 
 			bBox = (width === undefined || height === undefined || wrapper.styles.textAlign) &&
 				text.getBBox(true);
-			wrapper.width = (width || bBox.width) + 2 * padding;
-			wrapper.height = (height || bBox.height) + 2 * padding;
+			wrapper.width = (width || bBox.width || 0) + 2 * padding;
+			wrapper.height = (height || bBox.height || 0) + 2 * padding;
 
 			// update the label-scoped y offset
 			baselineOffset = padding + renderer.fontMetrics(style && style.fontSize).b;
@@ -3935,8 +3996,8 @@ SVGRenderer.prototype = {
 				boxY = baseline ? -baselineOffset : 0;
 
 				wrapper.box = box = shape ?
-					renderer.symbol(shape, 0, boxY, wrapper.width, wrapper.height) :
-					renderer.rect(0, boxY, wrapper.width, wrapper.height, 0, deferredAttr[STROKE_WIDTH]);
+					renderer.symbol(shape, -alignFactor * padding, boxY, wrapper.width, wrapper.height) :
+					renderer.rect(-alignFactor * padding, boxY, wrapper.width, wrapper.height, 0, deferredAttr[STROKE_WIDTH]);
 				box.add(wrapper);
 			}
 
@@ -3954,7 +4015,7 @@ SVGRenderer.prototype = {
 		function updateTextPadding() {
 			var styles = wrapper.styles,
 				textAlign = styles && styles.textAlign,
-				x = padding,
+				x = padding * (1 - alignFactor),
 				y;
 
 			// determin y based on the baseline
@@ -4031,7 +4092,7 @@ SVGRenderer.prototype = {
 
 		// change local variable and set attribue as well
 		attrSetters.align = function (value) {
-			align = value;
+			alignFactor = { left: 0, center: 0.5, right: 1 }[value];
 			return false; // prevent setting text-anchor on the group
 		};
 
@@ -4066,8 +4127,9 @@ SVGRenderer.prototype = {
 
 		// rename attributes
 		attrSetters.x = function (value) {
-			value -= { left: 0, center: 0.5, right: 1 }[align] * ((width || bBox.width) + padding);
-			wrapperX = wrapper.x = mathRound(value); // wrapper.x is for animation getter
+			wrapper.x = value; // for animation getter
+			value -= alignFactor * ((width || bBox.width) + padding);
+			wrapperX = mathRound(value);
 
 			wrapper.attr('translateX', wrapperX);
 			return false;
@@ -4487,12 +4549,19 @@ var VMLElement = {
 	 */
 	clip: function (clipRect) {
 		var wrapper = this,
-			clipMembers = clipRect.members;
+			clipMembers = clipRect.members,
+			element = wrapper.element;
 
 		clipMembers.push(wrapper);
 		wrapper.destroyClip = function () {
 			erase(clipMembers, wrapper);
 		};
+
+		// Issue #863 workaround - related to #140, #61, #74
+		if (element.parentNode.className === 'highcharts-tracker' && !docMode8) {
+			css(element, { visibility: HIDDEN });
+		}
+
 		return wrapper.css(clipRect.getCSS(wrapper.inverted));
 	},
 
@@ -4706,6 +4775,7 @@ var VMLRendererExtension = { // inherit SVGRenderer
 						height: bottom + PX
 					});
 				}
+
 				return ret;
 			},
 
@@ -5451,7 +5521,7 @@ function Chart(userOptions, callback) {
 			getLabelSize: function () {
 				var label = this.label;
 				return label ?
-					((this.labelBBox = label.getBBox()))[horiz ? 'height' : 'width'] :
+					((this.labelBBox = label.getBBox(true)))[horiz ? 'height' : 'width'] :
 					0;
 			},
 
@@ -5589,7 +5659,7 @@ function Chart(userOptions, callback) {
 					// If the parameter 'old' is set, the current call will be followed
 					// by another call, therefore do not do any animations this time
 					if (!old && gridLine && gridLinePath) {
-						gridLine.animate({
+						gridLine[tick.isNew ? 'attr' : 'animate']({
 							d: gridLinePath
 						});
 					}
@@ -6426,6 +6496,12 @@ function Chart(userOptions, callback) {
 					});
 					minRange = mathMin(closestDataRange * 5, dataMax - dataMin);
 				}
+
+				// A hook for resetting the minRange in series.setData (#878)
+				// TODO: remove this in protofy, where xAxis.minRange can be set directly
+				axis.setMinRange = function (newMinRange) {
+					minRange = newMinRange;
+				};
 			}
 
 			// if minRange is exceeded, adjust
@@ -6620,7 +6696,6 @@ function Chart(userOptions, callback) {
 		 * number of ticks in that group
 		 */
 		function adjustTickAmount() {
-
 			if (maxTicks && maxTicks[xOrY] && !isDatetimeAxis && !categories && !isLinked && options.alignTicks !== false) { // only apply to linear scale
 				var oldTickAmount = tickAmount,
 					calculatedTickAmount = tickPositions.length;
@@ -6661,7 +6736,8 @@ function Chart(userOptions, callback) {
 			oldAxisLength = axisLength;
 
 			// set the new axisLength
-			axisLength = horiz ? axisWidth : axisHeight;
+			axis.setAxisSize();
+			//axisLength = horiz ? axisWidth : axisHeight;
 			isDirtyAxisLength = axisLength !== oldAxisLength;
 
 			// is there new data?
@@ -6794,7 +6870,7 @@ function Chart(userOptions, callback) {
 			axisHeight = pick(options.height, plotHeight);
 			axisBottom = chartHeight - axisHeight - axisTop;
 			axisRight = chartWidth - axisWidth - axisLeft;
-			axisLength = horiz ? axisWidth : axisHeight;
+			axisLength = mathMax(horiz ? axisWidth : axisHeight, 0); // mathMax fixes #905
 
 			// expose to use in Series object and navigator
 			axis.left = axisLeft;
@@ -7149,9 +7225,12 @@ function Chart(userOptions, callback) {
 								visibility: VISIBLE,
 								zIndex: 6
 							})
-							.translate(plotLeft, plotTop)
 							.add();
 				}
+
+				// plotLeft/Top will change when y axis gets wider so we need to translate the
+				// stackTotalGroup at every render call. See bug #506 and #516
+				stackTotalGroup.translate(plotLeft, plotTop);
 
 				// Render each stack total
 				for (stackKey in stacks) {
@@ -7200,7 +7279,7 @@ function Chart(userOptions, callback) {
 
 			// hide tooltip and hover states
 			if (tracker.resetTracker) {
-				tracker.resetTracker();
+				tracker.resetTracker(true);
 			}
 
 			// render the axis
@@ -7355,7 +7434,7 @@ function Chart(userOptions, callback) {
 		style.padding = 0;
 
 		// create the label
-		var label = renderer.label('', 0, 0, null, null, null, options.useHTML)
+		var label = renderer.label('', 0, 0, null, null, null, options.useHTML, null, 'tooltip')
 			.attr({
 				padding: padding,
 				fill: options.backgroundColor,
@@ -7658,8 +7737,6 @@ function Chart(userOptions, callback) {
 		 */
 		function normalizeMouseEvent(e) {
 			var ePos,
-				chartPosLeft,
-				chartPosTop,
 				chartX,
 				chartY;
 
@@ -7684,16 +7761,14 @@ function Chart(userOptions, callback) {
 
 			// get mouse position
 			chartPosition = offset(container);
-			chartPosLeft = chartPosition.left;
-			chartPosTop = chartPosition.top;
 
 			// chartX and chartY
-			if (isIE) { // IE including IE9 that has pageX but in a different meaning
+			if (ePos.pageX === UNDEFINED) { // IE < 9. #886.
 				chartX = e.x;
 				chartY = e.y;
 			} else {
-				chartX = ePos.pageX - chartPosLeft;
-				chartY = ePos.pageY - chartPosTop;
+				chartX = ePos.pageX - chartPosition.left;
+				chartY = ePos.pageY - chartPosition.top;
 			}
 
 			return extend(e, {
@@ -7741,7 +7816,8 @@ function Chart(userOptions, callback) {
 				i,
 				j,
 				distance = chartWidth,
-				index = inverted ? e.chartY : e.chartX - plotLeft; // wtf?
+				// the index in the tooltipPoints array, corresponding to pixel position in plot area
+				index = inverted ? plotHeight + plotTop - e.chartY : e.chartX - plotLeft;
 
 			// shared tooltip
 			if (tooltip && options.shared && !(hoverSeries && hoverSeries.noSharedTooltip)) {
@@ -7794,24 +7870,34 @@ function Chart(userOptions, callback) {
 		/**
 		 * Reset the tracking by hiding the tooltip, the hover series state and the hover point
 		 */
-		function resetTracker() {
+		function resetTracker(allowMove) {
 			var hoverSeries = chart.hoverSeries,
-				hoverPoint = chart.hoverPoint;
+				hoverPoint = chart.hoverPoint,
+				tooltipPoints = chart.hoverPoints || hoverPoint;
 
-			if (hoverPoint) {
-				hoverPoint.onMouseOut();
+			// Just move the tooltip, #349
+			if (allowMove && tooltip && tooltipPoints) {
+				tooltip.refresh(tooltipPoints);
+
+			// Full reset
+			} else {
+
+				if (hoverPoint) {
+					hoverPoint.onMouseOut();
+				}
+
+				if (hoverSeries) {
+					hoverSeries.onMouseOut();
+				}
+
+				if (tooltip) {
+					tooltip.hide();
+					tooltip.hideCrosshairs();
+				}
+
+				hoverX = null;
+
 			}
-
-			if (hoverSeries) {
-				hoverSeries.onMouseOut();
-			}
-
-			if (tooltip) {
-				tooltip.hide();
-				tooltip.hideCrosshairs();
-			}
-
-			hoverX = null;
 		}
 
 		/**
@@ -7825,7 +7911,8 @@ function Chart(userOptions, callback) {
 					},
 					selectionBox = selectionMarker.getBBox(),
 					selectionLeft = selectionBox.x - plotLeft,
-					selectionTop = selectionBox.y - plotTop;
+					selectionTop = selectionBox.y - plotTop,
+					runZoom;
 
 
 				// a selection has been made
@@ -7855,23 +7942,30 @@ function Chart(userOptions, callback) {
 									0,
 									1
 								);
-
-								selectionData[isXAxis ? 'xAxis' : 'yAxis'].push({
-									axis: axis,
-									min: mathMin(selectionMin, selectionMax), // for reversed axes,
-									max: mathMax(selectionMin, selectionMax)
-								});
+								if (!isNaN(selectionMin) && !isNaN(selectionMax)) { // #859
+									selectionData[isXAxis ? 'xAxis' : 'yAxis'].push({
+										axis: axis,
+										min: mathMin(selectionMin, selectionMax), // for reversed axes,
+										max: mathMax(selectionMin, selectionMax)
+									});
+									runZoom = true;
+								}
 						}
 					});
-					fireEvent(chart, 'selection', selectionData, zoom);
+					if (runZoom) {
+						fireEvent(chart, 'selection', selectionData, zoom);
+					}
 
 				}
 				selectionMarker = selectionMarker.destroy();
 			}
 
-			css(container, { cursor: 'auto' });
+			if (chart) { // it may be destroyed on mouse up - #877
+				css(container, { cursor: 'auto' });
+				chart.cancelClick = hasDragged; // #370
+				chart.mouseIsDown = mouseIsDown = hasDragged = false;
+			}
 
-			chart.mouseIsDown = mouseIsDown = hasDragged = false;
 			removeEvent(doc, hasTouch ? 'touchend' : 'mouseup', drop);
 
 		}
@@ -7880,12 +7974,14 @@ function Chart(userOptions, callback) {
 		 * Special handler for mouse move that will hide the tooltip when the mouse leaves the plotarea.
 		 */
 		function hideTooltipOnMouseMove(e) {
-			var pageX = defined(e.pageX) ? e.pageX : e.page.x, // In mootools the event is wrapped and the page x/y position is named e.page.x
-				pageY = defined(e.pageX) ? e.pageY : e.page.y; // Ref: http://mootools.net/docs/core/Types/DOMEvent
 
+			// Get e.pageX and e.pageY back in MooTools
+			washMouseEvent(e);
+
+			// If we're outside, hide the tooltip
 			if (chartPosition &&
-					!isInsidePlot(pageX - chartPosition.left - plotLeft,
-						pageY - chartPosition.top - plotTop)) {
+					!isInsidePlot(e.pageX - chartPosition.left - plotLeft,
+						e.pageY - chartPosition.top - plotTop)) {
 				resetTracker();
 			}
 		}
@@ -7916,6 +8012,7 @@ function Chart(userOptions, callback) {
 
 				// record the start position
 				chart.mouseIsDown = mouseIsDown = true;
+				chart.cancelClick = false;
 				chart.mouseDownX = mouseDownX = e.chartX;
 				mouseDownY = e.chartY;
 
@@ -8087,7 +8184,7 @@ function Chart(userOptions, callback) {
 				e.cancelBubble = true; // IE specific
 
 
-				if (!hasDragged) {
+				if (!chart.cancelClick) {
 
 					// Detect clicks on trackers or tracker groups, #783
 					if (hoverPoint && (attr(e.target, 'isTracker') || attr(e.target.parentNode, 'isTracker'))) {
@@ -8121,8 +8218,6 @@ function Chart(userOptions, callback) {
 
 
 				}
-				// reset mouseIsDown and hasDragged
-				hasDragged = false;
 			};
 
 		}
@@ -8832,7 +8927,7 @@ function Chart(userOptions, callback) {
 					fireEvent(axis, 'afterSetExtremes', axis.getExtremes()); // #747, #751
 				}
 
-				if (axis.isDirty || isDirtyBox) {
+				if (axis.isDirty || isDirtyBox || hasStackedSeries) {
 					axis.redraw();
 					isDirtyBox = true; // #792
 				}
@@ -8866,9 +8961,9 @@ function Chart(userOptions, callback) {
 		});
 
 
-		// hide tooltip and hover states
+		// move tooltip or reset
 		if (tracker && tracker.resetTracker) {
-			tracker.resetTracker();
+			tracker.resetTracker(true);
 		}
 
 		// redraw if canvas
@@ -9213,7 +9308,7 @@ function Chart(userOptions, callback) {
 		// remove previous chart
 		renderTo.innerHTML = '';
 
-		// If the container doesn't have an offsetWidth, it has or is a child of a node
+		// If the container doesn't have an offsetWidth, it ha	s or is a child of a node
 		// that has display:none. We need to temporarily move it out to a visible
 		// state to determine the size, else the legend and tooltips won't render
 		// properly
@@ -9222,7 +9317,7 @@ function Chart(userOptions, callback) {
 			css(renderToClone, {
 				position: ABSOLUTE,
 				top: '-9999px',
-				display: ''
+				display: 'block'
 			});
 			doc.body.appendChild(renderToClone);
 		}
@@ -9256,35 +9351,6 @@ function Chart(userOptions, callback) {
 			// If we need canvg library, extend and configure the renderer
 			// to get the tracker for translating mouse events
 			renderer.create(chart, container, chartWidth, chartHeight);
-		}
-
-		// Issue 110 workaround:
-		// In Firefox, if a div is positioned by percentage, its pixel position may land
-		// between pixels. The container itself doesn't display this, but an SVG element
-		// inside this container will be drawn at subpixel precision. In order to draw
-		// sharp lines, this must be compensated for. This doesn't seem to work inside
-		// iframes though (like in jsFiddle).
-		var subPixelFix, rect;
-		if (isFirefox && container.getBoundingClientRect) {
-			subPixelFix = function () {
-				css(container, { left: 0, top: 0 });
-				rect = container.getBoundingClientRect();
-				css(container, {
-					left: (-(rect.left - pInt(rect.left))) + PX,
-					top: (-(rect.top - pInt(rect.top))) + PX
-				});
-			};
-
-			// run the fix now
-			subPixelFix();
-
-			// run it on resize
-			addEvent(win, 'resize', subPixelFix);
-
-			// remove it on chart destroy
-			addEvent(chart, 'destroy', function () {
-				removeEvent(win, 'resize', subPixelFix);
-			});
 		}
 	}
 
@@ -9663,6 +9729,8 @@ function Chart(userOptions, callback) {
 			axis.setScale();
 		});
 		getMargins();
+
+		maxTicks = null; // reset for second pass
 		each(axes, function (axis) {
 			axis.setTickPositions(true); // update to reflect the new margins
 		});
@@ -10080,19 +10148,23 @@ Point.prototype = {
 	destroy: function () {
 		var point = this,
 			series = point.series,
-			hoverPoints = series.chart.hoverPoints,
+			chart = series.chart,
+			hoverPoints = chart.hoverPoints,
 			prop;
 
-		series.chart.pointCount--;
+		chart.pointCount--;
 
 		if (hoverPoints) {
 			point.setState();
 			erase(hoverPoints, point);
+			if (!hoverPoints.length) {
+				chart.hoverPoints = null;
+			}
+
 		}
-		if (point === series.chart.hoverPoint) {
+		if (point === chart.hoverPoint) {
 			point.onMouseOut();
 		}
-		series.chart.hoverPoints = null;
 
 		// remove all events
 		if (point.graphic || point.dataLabel) { // removeEvent and destroyElements are performance expensive
@@ -10101,7 +10173,7 @@ Point.prototype = {
 		}
 
 		if (point.legendItem) { // pies have legend items
-			point.series.chart.legend.destroyItem(point);
+			chart.legend.destroyItem(point);
 		}
 
 		for (prop in point) {
@@ -10772,7 +10844,7 @@ Series.prototype = {
 		// Shift the first point off the parallel arrays
 		// todo: consider series.removePoint(i) method
 		if (shift) {
-			if (data[0]) {
+			if (data[0] && data[0].remove) {
 				data[0].remove(false);
 			} else {
 				data.shift();
@@ -10803,11 +10875,12 @@ Series.prototype = {
 			initialColor = series.initialColor,
 			chart = series.chart,
 			firstPoint = null,
+			xAxis = series.xAxis,
 			i;
 
 		// reset properties
 		series.xIncrement = null;
-		series.pointRange = (series.xAxis && series.xAxis.categories && 1) || options.pointRange;
+		series.pointRange = (xAxis && xAxis.categories && 1) || options.pointRange;
 
 		if (defined(initialColor)) { // reset colors for pie
 			chart.counters.color = initialColor;
@@ -10882,6 +10955,13 @@ Series.prototype = {
 			if (oldData[i] && oldData[i].destroy) {
 				oldData[i].destroy();
 			}
+		}
+
+		// reset minRange (#878)
+		// TODO: In protofy, run this code instead:
+		// if (xAxis) xAxis.minRange = UNDEFINED;
+		if (xAxis && xAxis.setMinRange) {
+			xAxis.setMinRange(); // to undefined
 		}
 
 		// redraw
@@ -11172,10 +11252,9 @@ Series.prototype = {
 	setTooltipPoints: function (renew) {
 		var series = this,
 			chart = series.chart,
-			inverted = chart.inverted,
 			points = [],
 			pointsLength,
-			plotSize = mathRound((inverted ? chart.plotTop : chart.plotLeft) + chart.plotSizeX),
+			plotSize = chart.plotSizeX,
 			low,
 			high,
 			xAxis = series.xAxis,
@@ -11201,10 +11280,10 @@ Series.prototype = {
 		// loop the concatenated points and apply each point to all the closest
 		// pixel positions
 		if (xAxis && xAxis.reversed) {
-			points = points.reverse();//reverseArray(points);
+			points = points.reverse();
 		}
 
-		//each(points, function (point, i) {
+		// Assign each pixel position to the nearest point
 		pointsLength = points.length;
 		for (i = 0; i < pointsLength; i++) {
 			point = points[i];
@@ -11214,7 +11293,7 @@ Series.prototype = {
 				plotSize;
 
 			while (low <= high) {
-				tooltipPoints[inverted ? plotSize - low++ : low++] = point;
+				tooltipPoints[low++] = point;
 			}
 		}
 		series.tooltipPoints = tooltipPoints;
@@ -11777,7 +11856,7 @@ Series.prototype = {
 							fill: options.backgroundColor,
 							stroke: options.borderColor,
 							'stroke-width': options.borderWidth,
-							r: options.borderRadius,
+							r: options.borderRadius || 0,
 							rotation: options.rotation,
 							padding: options.padding,
 							zIndex: 1
@@ -12691,13 +12770,17 @@ var ColumnSeries = extendClass(Series, {
 			cursor = options.cursor,
 			css = cursor && { cursor: cursor },
 			trackerGroup = series.drawTrackerGroup(),
-			rel;
+			rel,
+			plotY,
+			validPlotY;
 
 		each(series.points, function (point) {
 			tracker = point.tracker;
 			shapeArgs = point.trackerArgs || point.shapeArgs;
+			plotY = point.plotY;
+			validPlotY = !series.isCartesian || (plotY !== UNDEFINED && !isNaN(plotY));
 			delete shapeArgs.strokeWidth;
-			if (point.y !== null) {
+			if (point.y !== null && validPlotY) {
 				if (tracker) {// update
 					tracker.attr(shapeArgs);
 
@@ -13040,10 +13123,13 @@ var PieSeries = extendClass(Series, {
 	 * Extend the basic setData method by running processData and generatePoints immediately,
 	 * in order to access the points from the legend.
 	 */
-	setData: function () {
-		Series.prototype.setData.apply(this, arguments);
+	setData: function (data, redraw) {
+		Series.prototype.setData.call(this, data, false);
 		this.processData();
 		this.generatePoints();
+		if (pick(redraw, true)) {
+			this.chart.redraw();
+		}
 	},
 	/**
 	 * Do translation for pie slices
@@ -13315,7 +13401,7 @@ var PieSeries = extendClass(Series, {
 		// assume equal label heights
 		labelHeight = halves[0][0] && halves[0][0].dataLabel && halves[0][0].dataLabel.getBBox().height;
 
-		/* Loop over the points in each quartile, starting from the top and bottom
+		/* Loop over the points in each half, starting from the top and bottom
 		 * of the pie to detect overlapping labels.
 		 */
 		while (i--) {
@@ -13328,115 +13414,126 @@ var PieSeries = extendClass(Series, {
 				length = points.length,
 				slotIndex;
 
+			// Only do anti-collision when we are outside the pie and have connectors (#856)
+			if (distanceOption > 0) {
 
-			// build the slots
-			for (pos = centerY - radius - distanceOption; pos <= centerY + radius + distanceOption; pos += labelHeight) {
-				slots.push(pos);
-				// visualize the slot
-				/*
-				var slotX = series.getX(pos, i) + chart.plotLeft - (i ? 100 : 0),
-					slotY = pos + chart.plotTop;
-				if (!isNaN(slotX)) {
-					chart.renderer.rect(slotX, slotY - 7, 100, labelHeight)
-						.attr({
-							'stroke-width': 1,
-							stroke: 'silver'
-						})
-						.add();
-					chart.renderer.text('Slot '+ (slots.length - 1), slotX, slotY + 4)
-						.attr({
-							fill: 'silver'
-						}).add();
+				// build the slots
+				for (pos = centerY - radius - distanceOption; pos <= centerY + radius + distanceOption; pos += labelHeight) {
+					slots.push(pos);
+					// visualize the slot
+					/*
+					var slotX = series.getX(pos, i) + chart.plotLeft - (i ? 100 : 0),
+						slotY = pos + chart.plotTop;
+					if (!isNaN(slotX)) {
+						chart.renderer.rect(slotX, slotY - 7, 100, labelHeight)
+							.attr({
+								'stroke-width': 1,
+								stroke: 'silver'
+							})
+							.add();
+						chart.renderer.text('Slot '+ (slots.length - 1), slotX, slotY + 4)
+							.attr({
+								fill: 'silver'
+							}).add();
+					}
+					// */
 				}
-				// */
+				slotsLength = slots.length;
+
+				// if there are more values than available slots, remove lowest values
+				if (length > slotsLength) {
+					// create an array for sorting and ranking the points within each quarter
+					rankArr = [].concat(points);
+					rankArr.sort(sort);
+					j = length;
+					while (j--) {
+						rankArr[j].rank = j;
+					}
+					j = length;
+					while (j--) {
+						if (points[j].rank >= slotsLength) {
+							points.splice(j, 1);
+						}
+					}
+					length = points.length;
+				}
+
+				// The label goes to the nearest open slot, but not closer to the edge than
+				// the label's index.
+				for (j = 0; j < length; j++) {
+
+					point = points[j];
+					labelPos = point.labelPos;
+
+					var closest = 9999,
+						distance,
+						slotI;
+
+					// find the closest slot index
+					for (slotI = 0; slotI < slotsLength; slotI++) {
+						distance = mathAbs(slots[slotI] - labelPos[1]);
+						if (distance < closest) {
+							closest = distance;
+							slotIndex = slotI;
+						}
+					}
+
+					// if that slot index is closer to the edges of the slots, move it
+					// to the closest appropriate slot
+					if (slotIndex < j && slots[j] !== null) { // cluster at the top
+						slotIndex = j;
+					} else if (slotsLength  < length - j + slotIndex && slots[j] !== null) { // cluster at the bottom
+						slotIndex = slotsLength - length + j;
+						while (slots[slotIndex] === null) { // make sure it is not taken
+							slotIndex++;
+						}
+					} else {
+						// Slot is taken, find next free slot below. In the next run, the next slice will find the
+						// slot above these, because it is the closest one
+						while (slots[slotIndex] === null) { // make sure it is not taken
+							slotIndex++;
+						}
+					}
+
+					usedSlots.push({ i: slotIndex, y: slots[slotIndex] });
+					slots[slotIndex] = null; // mark as taken
+				}
+				// sort them in order to fill in from the top
+				usedSlots.sort(sort);
 			}
-			slotsLength = slots.length;
-
-			// if there are more values than available slots, remove lowest values
-			if (length > slotsLength) {
-				// create an array for sorting and ranking the points within each quarter
-				rankArr = [].concat(points);
-				rankArr.sort(sort);
-				j = length;
-				while (j--) {
-					rankArr[j].rank = j;
-				}
-				j = length;
-				while (j--) {
-					if (points[j].rank >= slotsLength) {
-						points.splice(j, 1);
-					}
-				}
-				length = points.length;
-			}
-
-			// The label goes to the nearest open slot, but not closer to the edge than
-			// the label's index.
-			for (j = 0; j < length; j++) {
-
-				point = points[j];
-				labelPos = point.labelPos;
-
-				var closest = 9999,
-					distance,
-					slotI;
-
-				// find the closest slot index
-				for (slotI = 0; slotI < slotsLength; slotI++) {
-					distance = mathAbs(slots[slotI] - labelPos[1]);
-					if (distance < closest) {
-						closest = distance;
-						slotIndex = slotI;
-					}
-				}
-
-				// if that slot index is closer to the edges of the slots, move it
-				// to the closest appropriate slot
-				if (slotIndex < j && slots[j] !== null) { // cluster at the top
-					slotIndex = j;
-				} else if (slotsLength  < length - j + slotIndex && slots[j] !== null) { // cluster at the bottom
-					slotIndex = slotsLength - length + j;
-					while (slots[slotIndex] === null) { // make sure it is not taken
-						slotIndex++;
-					}
-				} else {
-					// Slot is taken, find next free slot below. In the next run, the next slice will find the
-					// slot above these, because it is the closest one
-					while (slots[slotIndex] === null) { // make sure it is not taken
-						slotIndex++;
-					}
-				}
-
-				usedSlots.push({ i: slotIndex, y: slots[slotIndex] });
-				slots[slotIndex] = null; // mark as taken
-			}
-			// sort them in order to fill in from the top
-			usedSlots.sort(sort);
-
 
 			// now the used slots are sorted, fill them up sequentially
 			for (j = 0; j < length; j++) {
 
+				var slot, naturalY;
+
 				point = points[j];
 				labelPos = point.labelPos;
 				dataLabel = point.dataLabel;
-				var slot = usedSlots.pop(),
-					naturalY = labelPos[1];
-
 				visibility = point.visible === false ? HIDDEN : VISIBLE;
-				slotIndex = slot.i;
+				naturalY = labelPos[1];
 
-				// if the slot next to currrent slot is free, the y value is allowed
-				// to fall back to the natural position
-				y = slot.y;
-				if ((naturalY > y && slots[slotIndex + 1] !== null) ||
-						(naturalY < y &&  slots[slotIndex - 1] !== null)) {
+				if (distanceOption > 0) {
+					slot = usedSlots.pop();
+					slotIndex = slot.i;
+
+					// if the slot next to currrent slot is free, the y value is allowed
+					// to fall back to the natural position
+					y = slot.y;
+					if ((naturalY > y && slots[slotIndex + 1] !== null) ||
+							(naturalY < y &&  slots[slotIndex - 1] !== null)) {
+						y = naturalY;
+					}
+
+				} else {
 					y = naturalY;
 				}
 
 				// get the x - use the natural x position for first and last slot, to prevent the top
 				// and botton slice connectors from touching each other on either side
-				x = series.getX(slotIndex === 0 || slotIndex === slots.length - 1 ? naturalY : y, i);
+				x = options.justify ?
+					seriesCenter[0] + (i ? -1 : 1) * (radius + distanceOption) :
+					series.getX(slotIndex === 0 || slotIndex === slots.length - 1 ? naturalY : y, i);
 
 				// move or place the data label
 				dataLabel
@@ -13538,6 +13635,6 @@ extend(Highcharts, {
 	extendClass: extendClass,
 	placeBox: placeBox,
 	product: 'Highcharts',
-	version: '2.2.1'
+	version: '2.2.2'
 });
 }());

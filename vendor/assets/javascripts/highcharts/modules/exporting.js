@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v2.2.1 (2012-03-15)
+ * @license Highcharts JS v2.2.2 (2012-04-26)
  * Exporting module
  *
  * (c) 2010-2011 Torstein Hønsi
@@ -272,6 +272,8 @@ extend(Chart.prototype, {
 			.replace(/url\([^#]+#/g, 'url(#')
 			.replace(/<svg /, '<svg xmlns:xlink="http://www.w3.org/1999/xlink" ')
 			.replace(/ href=/g, ' xlink:href=')
+			.replace(/\n/, ' ')
+			.replace(/<\/svg>.*?$/, '</svg>') // any HTML added to the container after the SVG (#894)
 			/* This fails in IE < 8
 			.replace(/([0-9]+)\.([0-9]+)/g, function(s1, s2, s3) { // round off to save weight
 				return s2 +'.'+ s3[0];
@@ -320,7 +322,8 @@ extend(Chart.prototype, {
 		// create the form
 		form = createElement('form', {
 			method: 'post',
-			action: options.url
+			action: options.url,
+			enctype: 'multipart/form-data'
 		}, {
 			display: NONE
 		}, doc.body);

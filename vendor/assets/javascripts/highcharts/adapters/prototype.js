@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v2.2.1 (2012-03-15)
+ * @license Highcharts JS v2.2.2 (2012-04-26)
  * Prototype adapter
  *
  * @author Michael Nelson, Torstein Hønsi.
@@ -228,6 +228,10 @@ return {
 			HighchartsAdapter._extend(el);
 			el._highcharts_stop_observing(event, handler);
 		}
+	},
+
+	washMouseEvent: function (e) {
+		return e;
 	},
 
 	// um, grep
