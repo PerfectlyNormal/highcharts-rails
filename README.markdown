@@ -12,7 +12,9 @@ Add the gem to the Gemfile
 
 ## Changes
 
-Refer to the [Highcharts changelog](http://www.highcharts.com/documentation/changelog#highcharts)
+We have a tiny changelog for this gem, but since it's just a tiny wrapper gem, 
+refer to the [Highcharts changelog](http://www.highcharts.com/documentation/changelog#highcharts)
+for the important things.
 
 ## Usage
 
