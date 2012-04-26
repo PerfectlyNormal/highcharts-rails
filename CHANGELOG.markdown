@@ -1,3 +1,8 @@
+## 2.2.2 (2012-04-26)
+
+* Updated Highcharts to 2.2.2
+* Relaxed development dependency on Bundler from ~> 1.0.0 to ~> 1.0
+
 ## 2.2.1 (2012-04-15)
 
 * Updated Highcharts to 2.2.1
