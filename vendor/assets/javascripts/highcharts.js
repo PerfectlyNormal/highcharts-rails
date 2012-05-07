@@ -2,7 +2,7 @@
 // @compilation_level SIMPLE_OPTIMIZATIONS
 
 /**
- * @license Highcharts JS v2.2.2 (2012-04-26)
+ * @license Highcharts JS v2.2.3 (2012-05-07)
  *
  * (c) 2009-2011 Torstein Hønsi
  *
@@ -1284,7 +1284,7 @@ defaultOptions = {
 	},
 	global: {
 		useUTC: true,
-		canvasToolsURL: 'http://code.highcharts.com/2.2.2/modules/canvas-tools.js'
+		canvasToolsURL: 'http://code.highcharts.com/2.2.3/modules/canvas-tools.js'
 	},
 	chart: {
 		//animation: true,
@@ -6676,20 +6676,26 @@ function Chart(userOptions, callback) {
 				} else if (max < roundedMax) {
 					tickPositions.pop();
 				}
-
-				// record the greatest number of ticks for multi axis
-				if (!maxTicks) { // first call, or maxTicks have been reset after a zoom operation
-					maxTicks = {
-						x: 0,
-						y: 0
-					};
-				}
-
-				if (!isDatetimeAxis && tickPositions.length > maxTicks[xOrY] && options.alignTicks !== false) {
-					maxTicks[xOrY] = tickPositions.length;
-				}
 			}
 		}
+
+		/**
+		 * Set the max ticks of either the x and y axis collection. #840.
+		 */
+		axis.setMaxTicks = function () {
+
+			// record the greatest number of ticks for multi axis
+			if (!maxTicks) { // first call, or maxTicks have been reset after a zoom operation
+				maxTicks = {
+					x: 0,
+					y: 0
+				};
+			}
+
+			if (!isLinked && !isDatetimeAxis && tickPositions.length > maxTicks[xOrY] && options.alignTicks !== false) {
+				maxTicks[xOrY] = tickPositions.length;
+			}
+		};
 
 		/**
 		 * When using multiple axes, adjust the number of ticks to match the highest
@@ -6776,6 +6782,8 @@ function Chart(userOptions, callback) {
 					axis.isDirty = isDirtyAxisLength || min !== oldMin || max !== oldMax;
 				}
 			}
+
+			axis.setMaxTicks();
 		}
 
 		/**
@@ -9733,6 +9741,7 @@ function Chart(userOptions, callback) {
 		maxTicks = null; // reset for second pass
 		each(axes, function (axis) {
 			axis.setTickPositions(true); // update to reflect the new margins
+			axis.setMaxTicks();
 		});
 		adjustTickAmounts();
 		getMargins(); // second pass to check for new labels
@@ -13635,6 +13644,6 @@ extend(Highcharts, {
 	extendClass: extendClass,
 	placeBox: placeBox,
 	product: 'Highcharts',
-	version: '2.2.2'
+	version: '2.2.3'
 });
 }());
