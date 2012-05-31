@@ -1,3 +1,7 @@
+## 2.2.4 (2012-05-31)
+
+* Updated Highcharts to 2.2.4
+
 ## 2.2.3 (2012-05-07)
 
 * Updated Highcharts to 2.2.3
