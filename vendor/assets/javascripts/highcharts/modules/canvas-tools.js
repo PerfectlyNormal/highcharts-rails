@@ -2908,7 +2908,7 @@ if (CanvasRenderingContext2D) {
 		});
 	}
 }/**
- * @license Highcharts JS v2.2.4 (2012-05-31)
+ * @license Highcharts JS v2.3.0 (2012-08-24)
  * CanVGRenderer Extension module
  *
  * (c) 2011-2012 Torstein Hønsi, Erik Olsson
@@ -2933,7 +2933,6 @@ if (CanvasRenderingContext2D) {
 		extend = Highcharts.extend,
 		merge = Highcharts.merge,
 		addEvent = Highcharts.addEvent,
-		placeBox = Highcharts.placeBox,
 		createElement = Highcharts.createElement,
 		discardElement = Highcharts.discardElement;
 
@@ -3034,7 +3033,7 @@ if (CanvasRenderingContext2D) {
 				tooltipDiv.innerHTML = args.text;
 
 				// Compute the best position for the tooltip based on the divs size and container size.
-				position = placeBox(tooltipDiv.offsetWidth, tooltipDiv.offsetHeight, offsetLeft, offsetTop, chartContainer.offsetWidth, chartContainer.offsetHeight, {x: args.x, y: args.y}, 12);
+				position = chart.tooltip.getPosition(tooltipDiv.offsetWidth, tooltipDiv.offsetHeight, {plotX: args.x, plotY: args.y});
 
 				css(tooltipDiv, {
 					visibility: VISIBLE,

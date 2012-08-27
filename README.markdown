@@ -7,12 +7,12 @@ Highcharts is not free for commercial use, so make sure you have a [valid licens
 
 Add the gem to the Gemfile
 
-    gem "highcharts-rails", "~> 2.2.1"
+    gem "highcharts-rails", "~> 2.3.0"
     # The gem version mirrors the included version of Highcharts
 
 ## Changes
 
-We have a tiny changelog for this gem, but since it's just a tiny wrapper gem, 
+We have a tiny changelog for this gem, but since it's just a tiny wrapper gem,
 refer to the [Highcharts changelog](http://www.highcharts.com/documentation/changelog#highcharts)
 for the important things.
 
@@ -21,14 +21,17 @@ for the important things.
 In your JavaScript manifest (e.g. `application.js`)
 
     //= require highcharts
+    //= require highcharts/highcharts-more # to get the new features in 2.3.0
 
 To include one of the other adapters
 
     //= require highcharts/adapters/mootools
     //= require highcharts/adapters/prototype
 
-Or the Exporting module
+Or the modules
 
+    //= require highcharts/modules/canvas-tools
+    //= require highcharts/modules/data
     //= require highcharts/modules/exporting
 
 Or one of the themes

@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v2.2.4 (2012-05-31)
+ * @license Highcharts JS v2.3.0 (2012-08-24)
  * Exporting module
  *
  * (c) 2010-2011 Torstein Hønsi
@@ -192,11 +192,7 @@ extend(Chart.prototype, {
 		if (!doc.createElementNS) {
 			/*jslint unparam: true*//* allow unused parameter ns in function below */
 			doc.createElementNS = function (ns, tagName) {
-				var elem = doc.createElement(tagName);
-				elem.getBBox = function () {
-					return HC.Renderer.prototype.Element.prototype.getBBox.apply({ element: elem });
-				};
-				return elem;
+				return doc.createElement(tagName);
 			};
 			/*jslint unparam: false*/
 		}
