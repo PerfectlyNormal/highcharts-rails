@@ -2,7 +2,7 @@
 // @compilation_level SIMPLE_OPTIMIZATIONS
 
 /**
- * @license Highcharts JS v2.3.0 (2012-08-24)
+ * @license Highcharts JS v2.3.2 (2012-08-31)
  *
  * (c) 2009-2011 Torstein Hønsi
  *
@@ -32,7 +32,8 @@ var UNDEFINED,
 
 	// some variables
 	userAgent = navigator.userAgent,
-	isIE = /msie/i.test(userAgent) && !win.opera,
+	isOpera = win.opera,
+	isIE = /msie/i.test(userAgent) && !isOpera,
 	docMode8 = doc.documentMode === 8,
 	isWebKit = /AppleWebKit/.test(userAgent),
 	isFirefox = /Firefox/.test(userAgent),
@@ -1070,6 +1071,25 @@ pathAnim = {
 				Step.d = dSetter;
 			}
 			
+			/**
+			 * Utility for iterating over an array. Parameters are reversed compared to jQuery.
+			 * @param {Array} arr
+			 * @param {Function} fn
+			 */
+			this.each = Array.prototype.forEach ?
+				function (arr, fn) { // modern browsers
+					return Array.prototype.forEach.call(arr, fn);
+					
+				} : 
+				function (arr, fn) { // legacy
+					var i = 0, 
+						len = arr.length;
+					for (; i < len; i++) {
+						if (fn.call(arr[i], arr[i], i, arr) === false) {
+							return i;
+						}
+					}
+				};
 			
 			// Register Highcharts as a jQuery plugin
 			// TODO: MooTools and prototype as well?
@@ -1100,21 +1120,6 @@ pathAnim = {
 		 */
 		adapterRun: function (elem, method) {
 			return $(elem)[method]();
-		},
-	
-		/**
-		 * Utility for iterating over an array. Parameters are reversed compared to jQuery.
-		 * @param {Array} arr
-		 * @param {Function} fn
-		 */
-		each: function (arr, fn) {
-			var i = 0,
-				len = arr.length;
-			for (; i < len; i++) {
-				if (fn.call(arr[i], arr[i], i, arr) === false) {
-					return i;
-				}
-			}
 		},
 	
 		/**
@@ -1288,12 +1293,18 @@ pathAnim = {
 
 // check for a custom HighchartsAdapter defined prior to this file
 var globalAdapter = win.HighchartsAdapter,
-	adapter = globalAdapter || {},
+	adapter = globalAdapter || {};
+	
+// Initialize the adapter
+if (globalAdapter) {
+	globalAdapter.init.call(globalAdapter, pathAnim);
+}
+
 
 	// Utility functions. If the HighchartsAdapter is not defined, adapter is an empty object
 	// and all the utility functions will be null. In that case they are populated by the
 	// default adapters below.
-	adapterRun = adapter.adapterRun,
+var adapterRun = adapter.adapterRun,
 	getScript = adapter.getScript,
 	inArray = adapter.inArray,
 	each = adapter.each,
@@ -1308,15 +1319,6 @@ var globalAdapter = win.HighchartsAdapter,
 	animate = adapter.animate,
 	stop = adapter.stop;
 
-/*
- * Define the adapter for frameworks. If an external adapter is not defined,
- * Highcharts reverts to the built-in jQuery adapter.
- */
-if (globalAdapter && globalAdapter.init) {
-	// Initialize the adapter with the pathAnim object that takes care
-	// of path animations.
-	globalAdapter.init(pathAnim);
-}
 
 
 /* ****************************************************************************
@@ -1358,8 +1360,8 @@ defaultOptions = {
 	},
 	global: {
 		useUTC: true,
-		canvasToolsURL: 'http://code.highcharts.com/2.3.0/modules/canvas-tools.js',
-		VMLRadialGradientURL: 'http://code.highcharts.com/2.3.0/gfx/vml-radial-gradient.png'
+		canvasToolsURL: 'http://code.highcharts.com/2.3.2/modules/canvas-tools.js',
+		VMLRadialGradientURL: 'http://code.highcharts.com/2.3.2/gfx/vml-radial-gradient.png'
 	},
 	chart: {
 		//animation: true,
@@ -2061,7 +2063,10 @@ SVGElement.prototype = {
 
 
 					if (key === 'text') {
-						// only one node allowed
+						// Delete bBox memo when the text changes
+						if (value !== wrapper.textStr) {
+							delete wrapper.bBox;
+						}
 						wrapper.textStr = value;
 						if (wrapper.added) {
 							renderer.buildText(wrapper);
@@ -2168,7 +2173,7 @@ SVGElement.prototype = {
 
 		// store object
 		elemWrapper.styles = styles;
-
+		
 		// serialize and set style attribute
 		if (isIE && !hasSVG) { // legacy IE doesn't support setting style attribute
 			if (textWidth) {
@@ -2276,13 +2281,13 @@ SVGElement.prototype = {
 	 * @return {Object} A hash containing values for x, y, width and height
 	 */
 
-	htmlGetBBox: function (refresh) {
+	htmlGetBBox: function () {
 		var wrapper = this,
 			element = wrapper.element,
 			bBox = wrapper.bBox;
 
 		// faking getBBox in exported SVG in legacy IE
-		if (!bBox || refresh) {
+		if (!bBox) {
 			// faking getBBox in exported SVG in legacy IE (is this a duplicate of the fix for #1079?)
 			if (element.nodeName === 'text') {
 				element.style.position = ABSOLUTE;
@@ -2357,25 +2362,34 @@ SVGElement.prototype = {
 				textWidth = pInt(wrapper.textWidth),
 				xCorr = wrapper.xCorr || 0,
 				yCorr = wrapper.yCorr || 0,
-				currentTextTransform = [rotation, align, elem.innerHTML, wrapper.textWidth].join(',');
+				currentTextTransform = [rotation, align, elem.innerHTML, wrapper.textWidth].join(','),
+				rotationStyle = {},
+				prefix;
 
 			if (currentTextTransform !== wrapper.cTT) { // do the calculations and DOM access only if properties changed
 
 				if (defined(rotation)) {
-					radians = rotation * deg2rad; // deg to rad
-					costheta = mathCos(radians);
-					sintheta = mathSin(radians);
-
-					// Adjust for alignment and rotation. Rotation of useHTML content is not yet implemented
-					// but it can probably be implemented for Firefox 3.5+ on user request. FF3.5+
-					// has support for CSS3 transform. The getBBox method also needs to be updated
-					// to compensate for the rotation, like it currently does for SVG.
-					// Test case: http://highcharts.com/tests/?file=text-rotation
-					css(elem, {
-						filter: rotation ? ['progid:DXImageTransform.Microsoft.Matrix(M11=', costheta,
-							', M12=', -sintheta, ', M21=', sintheta, ', M22=', costheta,
-							', sizingMethod=\'auto expand\')'].join('') : NONE
-					});
+					
+					if (renderer.isSVG) { // #916
+						prefix = isIE ? '-ms' : isWebKit ? '-webkit' : isFirefox ? '-moz' : isOpera ? '-o' : '';
+						rotationStyle[prefix + '-transform'] = rotationStyle.transform = 'rotate(' + rotation + 'deg)';
+						
+					} else {
+						radians = rotation * deg2rad; // deg to rad
+						costheta = mathCos(radians);
+						sintheta = mathSin(radians);
+	
+						// Adjust for alignment and rotation. Rotation of useHTML content is not yet implemented
+						// but it can probably be implemented for Firefox 3.5+ on user request. FF3.5+
+						// has support for CSS3 transform. The getBBox method also needs to be updated
+						// to compensate for the rotation, like it currently does for SVG.
+						// Test case: http://highcharts.com/tests/?file=text-rotation
+						rotationStyle.filter = rotation ? ['progid:DXImageTransform.Microsoft.Matrix(M11=', costheta,
+								', M12=', -sintheta, ', M21=', sintheta, ', M22=', costheta,
+								', sizingMethod=\'auto expand\')'].join('') : NONE;
+					}
+					
+					css(elem, rotationStyle);
 				}
 
 				width = pick(wrapper.elemWidth, elem.offsetWidth);
@@ -2531,50 +2545,61 @@ SVGElement.prototype = {
 	/**
 	 * Get the bounding box (width, height, x and y) for the element
 	 */
-	getBBox: function (refresh) {
+	getBBox: function () {
 		var wrapper = this,
-			bBox,
+			bBox = wrapper.bBox,
+			renderer = wrapper.renderer,
 			width,
 			height,
 			rotation = wrapper.rotation,
 			element = wrapper.element,
 			rad = rotation * deg2rad;
 
-		// SVG elements
-		if (element.namespaceURI === SVG_NS || wrapper.renderer.forExport) {
-			try { // Fails in Firefox if the container has display: none.
+		if (!bBox) {
+			// SVG elements
+			if (element.namespaceURI === SVG_NS || renderer.forExport) {
+				try { // Fails in Firefox if the container has display: none.
+					
+					bBox = element.getBBox ?
+						// SVG: use extend because IE9 is not allowed to change width and height in case
+						// of rotation (below)
+						extend({}, element.getBBox()) :
+						// Canvas renderer and legacy IE in export mode
+						{
+							width: element.offsetWidth,
+							height: element.offsetHeight
+						};
+				} catch (e) {}
 				
-				bBox = element.getBBox ?
-					// SVG: use extend because IE9 is not allowed to change width and height in case
-					// of rotation (below)
-					extend({}, element.getBBox()) :
-					// Canvas renderer and legacy IE in export mode
-					{
-						width: element.offsetWidth,
-						height: element.offsetHeight
-					};
-			} catch (e) {}
-			
-			// If the bBox is not set, the try-catch block above failed. The other condition
-			// is for Opera that returns a width of -Infinity on hidden elements.
-			if (!bBox || bBox.width < 0) {
-				bBox = { width: 0, height: 0 };
+				// If the bBox is not set, the try-catch block above failed. The other condition
+				// is for Opera that returns a width of -Infinity on hidden elements.
+				if (!bBox || bBox.width < 0) {
+					bBox = { width: 0, height: 0 };
+				}
+				
+	
+			// VML Renderer or useHTML within SVG
+			} else {
+				
+				bBox = wrapper.htmlGetBBox();
+				
 			}
 			
-			width = bBox.width;
-			height = bBox.height;
-
-			// adjust for rotated text
-			if (rotation) {
-				bBox.width = mathAbs(height * mathSin(rad)) + mathAbs(width * mathCos(rad));
-				bBox.height = mathAbs(height * mathCos(rad)) + mathAbs(width * mathSin(rad));
+			// True SVG elements as well as HTML elements in modern browsers using the .useHTML option
+			// need to compensated for rotation
+			if (renderer.isSVG) {
+				width = bBox.width;
+				height = bBox.height;
+	
+				// Adjust for rotated text
+				if (rotation) {
+					bBox.width = mathAbs(height * mathSin(rad)) + mathAbs(width * mathCos(rad));
+					bBox.height = mathAbs(height * mathCos(rad)) + mathAbs(width * mathSin(rad));
+				}
 			}
-
-		// VML Renderer or useHTML within SVG
-		} else {
-			bBox = wrapper.htmlGetBBox(refresh);
+			
+			wrapper.bBox = bBox;
 		}
-
 		return bBox;
 	},
 
@@ -3054,6 +3079,7 @@ SVGRenderer.prototype = {
 							rest = [];
 
 						while (words.length || rest.length) {
+							delete wrapper.bBox; // delete cache
 							actualWidth = wrapper.getBBox().width;
 							tooLong = actualWidth > width;
 							if (!tooLong || words.length === 1) { // new line needed
@@ -3748,6 +3774,9 @@ SVGRenderer.prototype = {
 
 		// Text setter
 		attrSetters.text = function (value) {
+			if (value !== element.innerHTML) {
+				delete this.bBox;
+			}
 			element.innerHTML = value;
 			return false;
 		};
@@ -3916,7 +3945,7 @@ SVGRenderer.prototype = {
 				style = text.element.style;
 				
 			bBox = (width === undefined || height === undefined || wrapper.styles.textAlign) &&
-				text.getBBox(true);
+				text.getBBox();
 			wrapper.width = (width || bBox.width || 0) + 2 * padding;
 			wrapper.height = (height || bBox.height || 0) + 2 * padding;
 			
@@ -4213,11 +4242,6 @@ var VMLElement = {
 			renderer.invertChild(element, parentNode);
 		}
 
-		// issue #140 workaround - related to #61 and #74
-		if (docMode8 && parentNode.gVis === HIDDEN) {
-			css(element, { visibility: HIDDEN });
-		}
-
 		// append it
 		parentNode.appendChild(element);
 
@@ -4231,26 +4255,6 @@ var VMLElement = {
 		fireEvent(wrapper, 'add');
 
 		return wrapper;
-	},
-
-	/**
-	 * In IE8 documentMode 8, we need to recursively set the visibility down in the DOM
-	 * tree for nested groups. Related to #61, #586.
-	 */
-	toggleChildren: function (element, visibility) {
-		var childNodes = element.childNodes,
-			i = childNodes.length;
-			
-		while (i--) {
-			
-			// apply the visibility
-			css(childNodes[i], { visibility: visibility });
-			
-			// we have a nested group, apply it to its children again
-			if (childNodes[i].nodeName === 'DIV') {
-				this.toggleChildren(childNodes[i], visibility);
-			}
-		}
 	},
 
 	/**
@@ -4356,24 +4360,33 @@ var VMLElement = {
 						}
 						skipAttr = true;
 
-					// directly mapped to css
-					} else if (key === 'zIndex' || key === 'visibility') {
+					// handle visibility
+					} else if (key === 'visibility') {
 
-						// workaround for #61 and #586
-						if (docMode8 && key === 'visibility' && nodeName === 'DIV') {
-							element.gVis = value;
-							wrapper.toggleChildren(element, value);
-							if (value === VISIBLE) { // #74
-								value = null;
+						// let the shadow follow the main element
+						if (shadows) {
+							i = shadows.length;
+							while (i--) {
+								shadows[i].style[key] = value;
 							}
 						}
+						
+						// Instead of toggling the visibility CSS property, move the div out of the viewport. 
+						// This works around #61 and #586							
+						if (nodeName === 'DIV') {
+							value = value === HIDDEN ? '-999em' : 0;
+							key = 'top';
+						}
+						
+						elemStyle[key] = value;	
+						skipAttr = true;
+
+					// directly mapped to css
+					} else if (key === 'zIndex') {
 
 						if (value) {
 							elemStyle[key] = value;
 						}
-
-
-
 						skipAttr = true;
 
 					// width and height
@@ -4463,16 +4476,6 @@ var VMLElement = {
 						skipAttr = true;
 					}
 
-					// let the shadow follow the main element
-					if (shadows && key === 'visibility') {
-						i = shadows.length;
-						while (i--) {
-							shadows[i].style[key] = value;
-						}
-					}
-
-
-
 					if (!skipAttr) {
 						if (docMode8) { // IE8 setAttribute bug
 							element[key] = value;
@@ -4496,7 +4499,8 @@ var VMLElement = {
 		var wrapper = this,
 			clipMembers,
 			element = wrapper.element,
-			parentNode = element.parentNode;
+			parentNode = element.parentNode,
+			cssRet;
 
 		if (clipRect) {
 			clipMembers = clipRect.members;
@@ -4508,12 +4512,17 @@ var VMLElement = {
 			if (parentNode && parentNode.className === 'highcharts-tracker' && !docMode8) {
 				css(element, { visibility: HIDDEN });
 			}
+			cssRet = clipRect.getCSS(wrapper);
 			
-		} else if (wrapper.destroyClip) {
-			wrapper.destroyClip();
+		} else {
+			if (wrapper.destroyClip) {
+				wrapper.destroyClip();
+			}
+			cssRet = { clip: docMode8 ? 'inherit' : 'rect(auto)' }; // #1214
 		}
 		
-		return wrapper.css(clipRect ? clipRect.getCSS(wrapper) : { clip: 'inherit' });	
+		return wrapper.css(cssRet);
+			
 	},
 
 	/**
@@ -4529,8 +4538,7 @@ var VMLElement = {
 	safeRemoveChild: function (element) {
 		// discardElement will detach the node from its parent before attaching it
 		// to the garbage bin. Therefore it is important that the node is attached and have parent.
-		var parentNode = element.parentNode;
-		if (parentNode) {
+		if (element.parentNode) {
 			discardElement(element);
 		}
 	},
@@ -4539,13 +4547,11 @@ var VMLElement = {
 	 * Extend element.destroy by removing it from the clip members array
 	 */
 	destroy: function () {
-		var wrapper = this;
-
-		if (wrapper.destroyClip) {
-			wrapper.destroyClip();
+		if (this.destroyClip) {
+			this.destroyClip();
 		}
 
-		return SVGElement.prototype.destroy.apply(wrapper);
+		return SVGElement.prototype.destroy.apply(this);
 	},
 
 	/**
@@ -5442,7 +5448,7 @@ Tick.prototype = {
 		var label = this.label,
 			axis = this.axis;
 		return label ?
-			((this.labelBBox = label.getBBox(true)))[axis.horiz ? 'height' : 'width'] :
+			((this.labelBBox = label.getBBox()))[axis.horiz ? 'height' : 'width'] :
 			0;
 	},
 
@@ -5616,7 +5622,7 @@ Tick.prototype = {
 			step = labelOptions.step,
 			attribs,
 			show = true,
-			tickmarkOffset = (options.categories && options.tickmarkPlacement === 'between') ? 0.5 : 0,
+			tickmarkOffset = axis.tickmarkOffset,
 			xy = tick.getPosition(horiz, pos, tickmarkOffset, old),
 			x = xy.x,
 			y = xy.y,
@@ -6259,6 +6265,8 @@ Axis.prototype = {
 		// Tick intervals
 		//axis.tickInterval = UNDEFINED;
 		//axis.minorTickInterval = UNDEFINED;
+		
+		axis.tickmarkOffset = (options.categories && options.tickmarkPlacement === 'between') ? 0.5 : 0;
 	
 		// Major ticks
 		axis.ticks = {};
@@ -7337,6 +7345,15 @@ Axis.prototype = {
 	},
 	
 	/**
+	 * Overridable method for zooming chart. Pulled out in a separate method to allow overriding
+	 * in stock charts.
+	 */
+	zoom: function (newMin, newMax) {
+		this.setExtremes(newMin, newMax, false, UNDEFINED, { trigger: 'zoom' });
+		return true;
+	},
+	
+	/**
 	 * Update the axis metrics
 	 */
 	setAxisSize: function () {
@@ -7540,6 +7557,8 @@ Axis.prototype = {
 			horiz = this.horiz,
 			lineLeft = this.left + (opposite ? this.width : 0) + offset,
 			lineTop = chart.chartHeight - this.bottom - (opposite ? this.height : 0) + offset;
+			
+		this.lineTop = lineTop; // used by flag series
 
 		return chart.renderer.crispLine([
 				M,
@@ -7617,6 +7636,7 @@ Axis.prototype = {
 			alternateBands = axis.alternateBands,
 			stackLabelOptions = options.stackLabels,
 			alternateGridColor = options.alternateGridColor,
+			tickmarkOffset = axis.tickmarkOffset,
 			lineWidth = options.lineWidth,
 			linePath,
 			hasRendered = chart.hasRendered,
@@ -7679,8 +7699,8 @@ Axis.prototype = {
 						if (!alternateBands[pos]) {
 							alternateBands[pos] = new PlotLineOrBand(axis);
 						}
-						from = pos;
-						to = tickPositions[i + 1] !== UNDEFINED ? tickPositions[i + 1] : axis.max;
+						from = pos + tickmarkOffset; // #949
+						to = tickPositions[i + 1] !== UNDEFINED ? tickPositions[i + 1] + tickmarkOffset : axis.max;
 						alternateBands[pos].options = {
 							from: isLog ? lin2log(from) : from,
 							to: isLog ? lin2log(to) : to,
@@ -9302,7 +9322,7 @@ Legend.prototype = {
 
 		// sort by legendIndex
 		stableSort(allItems, function (a, b) {
-			return (a.options.legendIndex || 0) - (b.options.legendIndex || 0);
+			return ((a.options && a.options.legendIndex) || 0) - ((b.options && b.options.legendIndex) || 0);
 		});
 
 		// reversed legend
@@ -10008,22 +10028,12 @@ Chart.prototype = {
 	 */
 	zoom: function (event) {
 		var chart = this,
-			optionsChart = chart.options.chart;
-
-		// add button to reset selection
-		var hasZoomed;
-
-		if (chart.resetZoomEnabled !== false && !chart.resetZoomButton) { // hook for Stock charts etc.
-			chart.showResetZoom();
-		}
+			hasZoomed;
 
 		// if zoom is called with no arguments, reset the axes
 		if (!event || event.resetSelection) {
 			each(chart.axes, function (axis) {
-				if (axis.options.zoomEnabled !== false) {
-					axis.setExtremes(null, null, false, UNDEFINED, { trigger: 'zoomout' });
-					hasZoomed = true;
-				}
+				hasZoomed = axis.zoom();
 			});
 		} else { // else, zoom in on all axes
 			each(event.xAxis.concat(event.yAxis), function (axisData) {
@@ -10031,16 +10041,21 @@ Chart.prototype = {
 
 				// don't zoom more than minRange
 				if (chart.tracker[axis.isXAxis ? 'zoomX' : 'zoomY']) {
-					axis.setExtremes(axisData.min, axisData.max, false, UNDEFINED, { trigger: 'zoom' });
-					hasZoomed = true;
+					hasZoomed = axis.zoom(axisData.min, axisData.max);
 				}
 			});
 		}
+		
+		// Show the Reset zoom button
+		if (!chart.resetZoomButton) {
+			chart.showResetZoom();
+		}
+		
 
 		// Redraw
 		if (hasZoomed) {
 			chart.redraw(
-				pick(optionsChart.animation, chart.pointCount < 100) // animation
+				pick(chart.options.chart.animation, chart.pointCount < 100) // animation
 			);
 		}
 	},
@@ -10771,8 +10786,8 @@ Chart.prototype = {
 
 		// Labels
 		if (labels.items) {
-			each(labels.items, function () {
-				var style = extend(labels.style, this.style),
+			each(labels.items, function (label) {
+				var style = extend(labels.style, label.style),
 					x = pInt(style.left) + chart.plotLeft,
 					y = pInt(style.top) + chart.plotTop + 12;
 
@@ -10781,7 +10796,7 @@ Chart.prototype = {
 				delete style.top;
 
 				renderer.text(
-					this.html,
+					label.html,
 					x,
 					y
 				)
@@ -11064,10 +11079,7 @@ Point.prototype = {
 
 		if (series.options.colorByPoint) {
 			defaultColors = series.chart.options.colors;
-			if (!point.options) {
-				point.options = {};
-			}
-			point.color = point.options.color = point.color || defaultColors[counters.color++];
+			point.color = point.color || defaultColors[counters.color++];
 
 			// loop back to zero
 			counters.wrapColor(defaultColors.length);
@@ -11643,7 +11655,7 @@ Series.prototype = {
 		chart.series.push(series);
 		
 		// Sort series according to index option (#248, #1123)
-		chart.series.sort(function (a, b) {
+		stableSort(chart.series, function (a, b) {
 			return (a.options.index || 0) - (b.options.index || 0);
 		});
 		each(chart.series, function (series, i) {
@@ -12286,7 +12298,7 @@ Series.prototype = {
 				yValue = yBottom + yValue;
 				
 				if (isBottomSeries) {
-					yBottom = pick(options.threshold, yAxis.min);
+					yBottom = pick(options.threshold, yAxis.isLog ? null : yAxis.min); // #1200
 				}
 				
 				if (stacking === 'percent') {
@@ -12541,18 +12553,13 @@ Series.prototype = {
 	afterAnimate: function () {
 		var chart = this.chart,
 			sharedClipKey = this.sharedClipKey,
-			group = this.group,
-			trackerGroup = this.trackerGroup;
+			group = this.group;
 			
 		if (group && this.options.clip !== false) {
 			group.clip(chart.clipRect);
 			this.markerGroup.clip(); // no clip
 		}
 		
-		if (trackerGroup) {
-			trackerGroup.clip(chart.clipRect);
-		}
-
 		// Remove the shared clipping rectancgle when all series are shown		
 		setTimeout(function () {
 			if (sharedClipKey && chart[sharedClipKey]) {
@@ -12725,8 +12732,8 @@ Series.prototype = {
 			if (normalOptions && normalOptions.enabled === false) {
 				normalOptions.radius = 0;
 			}
-			hasPointSpecificOptions = false;
-
+			hasPointSpecificOptions = series.options.colorByPoint; // #868
+			
 			// check if the point has specific visual options
 			if (point.options) {
 				for (key in pointAttrToOptions) {
@@ -12741,22 +12748,25 @@ Series.prototype = {
 			// a specific marker config object is defined for the individual point:
 			// create it's own attribute collection
 			if (hasPointSpecificOptions) {
-
+				normalOptions = normalOptions || {};
 				pointAttr = [];
 				stateOptions = normalOptions.states || {}; // reassign for individual point
 				pointStateOptionsHover = stateOptions[HOVER_STATE] = stateOptions[HOVER_STATE] || {};
 
-				// if no hover color is given, brighten the normal color
+				// Handle colors for column and pies
 				if (!series.options.marker) { // column, bar, point
+					// if no hover color is given, brighten the normal color
 					pointStateOptionsHover.color =
-						Color(pointStateOptionsHover.color || point.options.color)
+						Color(pointStateOptionsHover.color || point.color)
 							.brighten(pointStateOptionsHover.brightness ||
 								stateOptionsHover.brightness).get();
 
 				}
 
 				// normal point state inherits series wide normal state
-				pointAttr[NORMAL_STATE] = series.convertAttribs(normalOptions, seriesPointAttr[NORMAL_STATE]);
+				pointAttr[NORMAL_STATE] = series.convertAttribs(extend({
+					color: point.color // #868
+				}, normalOptions), seriesPointAttr[NORMAL_STATE]);
 
 				// inherit from point normal and series hover
 				pointAttr[HOVER_STATE] = series.convertAttribs(
@@ -12885,9 +12895,7 @@ Series.prototype = {
 				yIsNull = options.y === null,
 				fontMetrics = renderer.fontMetrics(options.style.fontSize), // height and baseline
 				fontLineHeight = fontMetrics.h,
-				fontBaseline = fontMetrics.b,
-				dataLabel,
-				enabled;
+				fontBaseline = fontMetrics.b;
 
 			if (isBarLike) {
 				var defaultYs = {
@@ -12931,7 +12939,11 @@ Series.prototype = {
 			generalOptions = options;
 			each(points, function (point) {
 				
-				dataLabel = point.dataLabel;
+				var plotX,
+					plotY,
+					individualYDelta,
+					enabled,
+					dataLabel = point.dataLabel;
 				
 				// Merge in individual options from point
 				options = generalOptions; // reset changes from previous points
@@ -12943,24 +12955,30 @@ Series.prototype = {
 				
 				// Get the positions
 				if (enabled) {
-					var plotX = (point.barX && point.barX + point.barW / 2) || pick(point.plotX, -999),
-						plotY = pick(point.plotY, -999),
+					plotX = (point.barX && point.barX + point.barW / 2) || pick(point.plotX, -999);
+					plotY = pick(point.plotY, -999);
 						
-						// if options.y is null, which happens by default on column charts, set the position
-						// above or below the column depending on the threshold
-						individualYDelta = options.y === null ? 
-							(point.y >= seriesOptions.threshold ? 
-								-fontLineHeight + fontBaseline : // below the threshold 
-								fontBaseline) : // above the threshold
-							options.y;
+					// if options.y is null, which happens by default on column charts, set the position
+					// above or below the column depending on the threshold
+					individualYDelta = options.y === null ? 
+						(point.y >= seriesOptions.threshold ? 
+							-fontLineHeight + fontBaseline : // below the threshold 
+							fontBaseline) : // above the threshold
+						options.y;
 					
 					x = (inverted ? chart.plotWidth - plotY : plotX) + options.x;
 					y = mathRound((inverted ? chart.plotHeight - plotX : plotY) + individualYDelta);
 					
 				}
 				
+				// Check if the individual label must be disabled due to either falling
+				// ouside the plot area, or the enabled option being switched off
+				if (series.isCartesian && !chart.isInsidePlot(x - options.x, y)) {
+					enabled = false;
+				}
+				
 				// If the point is outside the plot area, destroy it. #678, #820
-				if (dataLabel && series.isCartesian && (!chart.isInsidePlot(x, y) || !enabled)) {
+				if (dataLabel && !enabled) {
 					point.dataLabel = dataLabel.destroy();
 				
 				// Individual labels are disabled if the are explicitly disabled 
@@ -13286,6 +13304,9 @@ Series.prototype = {
 		// Initial clipping, must be defined after inverting groups for VML
 		if (options.clip !== false && !series.sharedClipKey && !hasRendered) {
 			group.clip(chart.clipRect);
+			if (this.trackerGroup) {
+				this.trackerGroup.clip(chart.clipRect);
+			}
 		}
 
 		// Run the animation
@@ -14368,7 +14389,8 @@ var PiePoint = extendClass(Point, {
 	 */
 	setVisible: function (vis) {
 		var point = this,
-			chart = point.series.chart,
+			series = point.series,
+			chart = series.chart,
 			tracker = point.tracker,
 			dataLabel = point.dataLabel,
 			connector = point.connector,
@@ -14395,6 +14417,12 @@ var PiePoint = extendClass(Point, {
 		}
 		if (point.legendItem) {
 			chart.legend.colorizeItem(point, vis);
+		}
+		
+		// Handle ignore hidden slices
+		if (!series.isDirty && series.options.ignoreHiddenPoint) {
+			series.isDirty = true;
+			chart.redraw();
 		}
 	},
 
@@ -14549,7 +14577,8 @@ var PieSeries = {
 			fraction,
 			radiusX, // the x component of the radius vector for a given point
 			radiusY,
-			labelDistance = options.dataLabels.distance;
+			labelDistance = options.dataLabels.distance,
+			ignoreHiddenPoint = options.ignoreHiddenPoint;
 
 		// get positions - either an integer or a percentage string must be given
 		series.center = positions = series.getCenter();
@@ -14566,14 +14595,16 @@ var PieSeries = {
 
 		// get the total sum
 		each(points, function (point) {
-			total += point.y;
+			total += (ignoreHiddenPoint && !point.visible) ? 0 : point.y;
 		});
 
 		each(points, function (point) {
 			// set start and end angle
 			fraction = total ? point.y / total : 0;
 			start = mathRound(cumulative * circ * precision) / precision;
-			cumulative += fraction;
+			if (!ignoreHiddenPoint || point.visible) {
+				cumulative += fraction;
+			}
 			end = mathRound(cumulative * circ * precision) / precision;
 
 			// set the shape
@@ -15030,6 +15061,6 @@ extend(Highcharts, {
 	canvas: useCanVG,
 	vml: !hasSVG && !useCanVG,
 	product: 'Highcharts',
-	version: '2.3.0'
+	version: '2.3.2'
 });
 }());

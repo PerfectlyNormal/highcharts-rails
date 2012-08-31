@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v2.3.0 (2012-08-24)
+ * @license Highcharts JS v2.3.2 (2012-08-31)
  * Exporting module
  *
  * (c) 2010-2011 Torstein Hønsi
@@ -605,7 +605,7 @@ extend(Chart.prototype, {
 				btnOptions.symbol,
 				btnOptions.symbolX - (symbolSize / 2),
 				btnOptions.symbolY - (symbolSize / 2),
-				symbolSize,
+				symbolSize,				
 				symbolSize
 			)
 			.align(btnOptions, true)
@@ -658,7 +658,7 @@ function crisp(arr) {
 	var i = arr.length;
 	while (i--) {
 		if (typeof arr[i] === 'number') {
-			arr[i] = Math.round(arr[i]) - 0.5;
+			arr[i] = Math.round(arr[i]) - 0.5;		
 		}
 	}
 	return arr;

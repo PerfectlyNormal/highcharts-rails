@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v2.3.0 (2012-08-24)
+ * @license Highcharts JS v2.3.2 (2012-08-31)
  * Prototype adapter
  *
  * @author Michael Nelson, Torstein Hønsi.
@@ -84,13 +84,13 @@ return {
 
 					if (element.attr) { // SVGElement
 						element.attr(this.options.attribute, position);
-
+					
 					} else { // HTML, #409
 						obj = {};
 						obj[this.options.attribute] = position;
 						$(element).setStyle(obj);
 					}
-
+					
 				},
 				finish: function () {
 					// Delete the property that holds this animation now that it is finished.
@@ -100,18 +100,18 @@ return {
 			});
 		}
 	},
-
+	
 	/**
 	 * Run a general method on the framework, following jQuery syntax
 	 * @param {Object} el The HTML element
 	 * @param {String} method Which method to run on the wrapped element
 	 */
 	adapterRun: function (el, method) {
-
+		
 		// This currently works for getting inner width and height. If adding
 		// more methods later, we need a conditional implementation for each.
 		return parseInt($(el).getStyle(method), 10);
-
+		
 	},
 
 	/**
@@ -200,7 +200,7 @@ return {
 	each: function (arr, fn) {
 		$A(arr).each(fn);
 	},
-
+	
 	inArray: function (item, arr) {
 		return arr.indexOf(item);
 	},
@@ -246,7 +246,7 @@ return {
 			el._highcharts_stop_observing(event, handler);
 		}
 	},
-
+	
 	washMouseEvent: function (e) {
 		return e;
 	},
