@@ -1,3 +1,7 @@
+## 2.3.3.1 (2012-12-14)
+
+* Relaxed railties dependency to prepare for Rails 4
+
 ## 2.3.3 (2012-10-04)
 
 * Updated Highcharts to 2.3.3
