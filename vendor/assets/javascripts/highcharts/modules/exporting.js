@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v2.3.3 (2012-10-04)
+ * @license Highcharts JS v2.3.5 (2012-12-19)
  * Exporting module
  *
  * (c) 2010-2011 Torstein Hønsi
@@ -10,24 +10,23 @@
 // JSLint options:
 /*global Highcharts, document, window, Math, setTimeout */
 
-(function () { // encapsulate
+(function (Highcharts) { // encapsulate
 
 // create shortcuts
-var HC = Highcharts,
-	Chart = HC.Chart,
-	addEvent = HC.addEvent,
-	removeEvent = HC.removeEvent,
-	createElement = HC.createElement,
-	discardElement = HC.discardElement,
-	css = HC.css,
-	merge = HC.merge,
-	each = HC.each,
-	extend = HC.extend,
+var Chart = Highcharts.Chart,
+	addEvent = Highcharts.addEvent,
+	removeEvent = Highcharts.removeEvent,
+	createElement = Highcharts.createElement,
+	discardElement = Highcharts.discardElement,
+	css = Highcharts.css,
+	merge = Highcharts.merge,
+	each = Highcharts.each,
+	extend = Highcharts.extend,
 	math = Math,
 	mathMax = math.max,
 	doc = document,
 	win = window,
-	hasTouch = doc.documentElement.ontouchstart !== undefined,
+	isTouchDevice = Highcharts.isTouchDevice,
 	M = 'M',
 	L = 'L',
 	DIV = 'div',
@@ -37,7 +36,8 @@ var HC = Highcharts,
 	ABSOLUTE = 'absolute',
 	PX = 'px',
 	UNDEFINED,
-	defaultOptions = HC.getOptions();
+	symbols = Highcharts.Renderer.prototype.symbols,
+	defaultOptions = Highcharts.getOptions();
 
 	// Add language
 	extend(defaultOptions.lang, {
@@ -60,7 +60,7 @@ defaultOptions.navigation = {
 		padding: '0 5px',
 		background: NONE,
 		color: '#303030',
-		fontSize: hasTouch ? '14px' : '11px'
+		fontSize: isTouchDevice ? '14px' : '11px'
 	},
 	menuItemHoverStyle: {
 		background: '#4572A5',
@@ -172,7 +172,35 @@ defaultOptions.exporting = {
 	}
 };
 
+// Add the Highcharts.post utility
+Highcharts.post = function (url, data) {
+	var name,
+		form;
+	
+	// create the form
+	form = createElement('form', {
+		method: 'post',
+		action: url,
+		enctype: 'multipart/form-data'
+	}, {
+		display: NONE
+	}, doc.body);
 
+	// add the data
+	for (name in data) {
+		createElement('input', {
+			type: HIDDEN,
+			name: name,
+			value: data[name]
+		}, null, form);
+	}
+
+	// submit
+	form.submit();
+
+	// clean up
+	discardElement(form);
+};
 
 extend(Chart.prototype, {
 	/**
@@ -223,12 +251,6 @@ extend(Chart.prototype, {
 			});
 
 			if (!seriesOptions.isInternal) { // used for the navigator series that has its own option set
-
-				// remove image markers
-				if (seriesOptions && seriesOptions.marker && /^url\(/.test(seriesOptions.marker.symbol)) {
-					seriesOptions.marker.symbol = 'circle';
-				}
-
 				options.series.push(seriesOptions);
 			}
 		});
@@ -308,43 +330,23 @@ extend(Chart.prototype, {
 	 * @param {Object} chartOptions Additional chart options for the SVG representation of the chart
 	 */
 	exportChart: function (options, chartOptions) {
-		var form,
-			chart = this,
-			svg = chart.getSVG(merge(chart.options.exporting.chartOptions, chartOptions)); // docs
+		var exportingOptions = this.options.exporting,
+			svg = this.getSVG(merge(exportingOptions.chartOptions, chartOptions));
 
 		// merge the options
-		options = merge(chart.options.exporting, options);
-
-		// create the form
-		form = createElement('form', {
-			method: 'post',
-			action: options.url,
-			enctype: 'multipart/form-data'
-		}, {
-			display: NONE
-		}, doc.body);
-
-		// add the values
-		each(['filename', 'type', 'width', 'svg'], function (name) {
-			createElement('input', {
-				type: HIDDEN,
-				name: name,
-				value: {
-					filename: options.filename || 'chart',
-					type: options.type,
-					width: options.width,
-					svg: svg
-				}[name]
-			}, null, form);
+		options = merge(exportingOptions, options);
+		
+		// do the post
+		Highcharts.post(options.url, {
+			filename: options.filename || 'chart',
+			type: options.type,
+			width: options.width,
+			scale: options.scale || 2,
+			svg: svg
 		});
 
-		// submit
-		form.submit();
-
-		// clean up
-		discardElement(form);
 	},
-
+	
 	/**
 	 * Print the chart
 	 */
@@ -418,6 +420,7 @@ extend(Chart.prototype, {
 			boxShadow = '3px 3px 10px #888',
 			innerMenu,
 			hide,
+			hideTimer,
 			menuStyle;
 
 		// create the menu only the first time
@@ -444,7 +447,13 @@ extend(Chart.prototype, {
 				css(menu, { display: NONE });
 			};
 
-			addEvent(menu, 'mouseleave', hide);
+			// Hide the menu some time after mouse leave (#1357)
+			addEvent(menu, 'mouseleave', function () {
+				hideTimer = setTimeout(hide, 500);
+			});
+			addEvent(menu, 'mouseenter', function () {
+				clearTimeout(hideTimer);
+			});
 
 
 			// create the items
@@ -462,7 +471,7 @@ extend(Chart.prototype, {
 						cursor: 'pointer'
 					}, menuItemStyle), innerMenu);
 
-					div[hasTouch ? 'ontouchstart' : 'onclick'] = function () {
+					div.onclick = function () {
 						hide();
 						item.onclick.apply(chart, arguments);
 					};
@@ -511,6 +520,7 @@ extend(Chart.prototype, {
 			box,
 			symbol,
 			button,
+			menuKey,
 			borderWidth = btnOptions.borderWidth,
 			boxAttr = {
 				stroke: btnOptions.borderColor
@@ -521,6 +531,11 @@ extend(Chart.prototype, {
 				fill: btnOptions.symbolFill
 			},
 			symbolSize = btnOptions.symbolSize || 12;
+
+		if (!chart.btnCount) {
+			chart.btnCount = 0;
+		}
+		menuKey = chart.btnCount++;
 
 		// Keeps references to the button elements
 		if (!chart.exportDivElements) {
@@ -587,10 +602,11 @@ extend(Chart.prototype, {
 
 		// add the click event
 		if (menuItems) {
+
 			onclick = function () {
 				revert();
 				var bBox = button.getBBox();
-				chart.contextMenu('export-menu', menuItems, bBox.x, bBox.y, buttonWidth, buttonHeight);
+				chart.contextMenu('menu' + menuKey, menuItems, bBox.x, bBox.y, buttonWidth, buttonHeight);
 			};
 		}
 		/*addEvent(button.element, 'click', function() {
@@ -665,7 +681,7 @@ function crisp(arr) {
 }
 
 // Create the export icon
-HC.Renderer.prototype.symbols.exportIcon = function (x, y, width, height) {
+symbols.exportIcon = function (x, y, width, height) {
 	return crisp([
 		M, // the disk
 		x, y + width,
@@ -687,7 +703,7 @@ HC.Renderer.prototype.symbols.exportIcon = function (x, y, width, height) {
 	]);
 };
 // Create the print icon
-HC.Renderer.prototype.symbols.printIcon = function (x, y, width, height) {
+symbols.printIcon = function (x, y, width, height) {
 	return crisp([
 		M, // the printer
 		x, y + height * 0.7,
@@ -733,4 +749,4 @@ Chart.prototype.callbacks.push(function (chart) {
 });
 
 
-}());
+}(Highcharts));
