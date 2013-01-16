@@ -7,9 +7,76 @@
  */
 
 /*
+ * The Highcharts Data plugin is a utility to ease parsing of input sources like
+ * CSV, HTML tables or grid views into basic configuration options for use 
+ * directly in the Highcharts constructor.
+ *
  * Demo: http://jsfiddle.net/highcharts/SnLFj/
+ *
+ * --- OPTIONS ---
+ *
+ * - columns : Array<Array<Mixed>>
+ * A two-dimensional array representing the input data on tabular form. This input can
+ * be used when the data is already parsed, for example from a grid view component.
+ * Each cell can be a string or number. If not switchRowsAndColumns is set, the columns
+ * are interpreted as series. See also the rows option.
+ *
+ * - complete : Function(chartOptions)
+ * The callback that is evaluated when the data is finished loading, optionally from an 
+ * external source, and parsed. The first argument passed is a finished chart options
+ * object, containing series and an xAxis with categories if applicable. Thise options
+ * can be extended with additional options and passed directly to the chart constructor.
+ *
+ * - csv : String
+ * A comma delimited string to be parsed. Related options are startRow, endRow, startColumn
+ * and endColumn to delimit what part of the table is used. The lineDelimiter and 
+ * itemDelimiter options define the CSV delimiter formats.
+ * 
+ * - endColumn : Integer
+ * In tabular input data, the first row (indexed by 0) to use. Defaults to the last 
+ * column containing data.
+ *
+ * - endRow : Integer
+ * In tabular input data, the last row (indexed by 0) to use. Defaults to the last row
+ * containing data.
+ *
+ * - googleSpreadsheetKey : String 
+ * A Google Spreadsheet key. See https://developers.google.com/gdata/samples/spreadsheet_sample
+ * for general information on GS.
+ *
+ * - googleSpreadsheetKey : String 
+ * The Google Spreadsheet worksheet. The available id's can be read from 
+ * https://spreadsheets.google.com/feeds/worksheets/{key}/public/basic
+ *
+ * - itemDilimiter : String
+ * Item or cell delimiter for parsing CSV. Defaults to ",".
+ *
+ * - lineDilimiter : String
+ * Line delimiter for parsing CSV. Defaults to "\n".
+ *
+ * - parsed : Function
+ * A callback function to access the parsed columns, the two-dimentional input data
+ * array directly, before they are interpreted into series data and categories.
+ *
+ * - parseDate : Function
+ * A callback function to parse string representations of dates into JavaScript timestamps.
+ * Return an integer on success.
+ *
+ * - rows : Array<Array<Mixed>>
+ * The same as the columns input option, but defining rows intead of columns.
+ *
+ * - startColumn : Integer
+ * In tabular input data, the first column (indexed by 0) to use. 
+ *
+ * - startRow : Integer
+ * In tabular input data, the first row (indexed by 0) to use.
+ *
+ * - table : String|HTMLElement
+ * A HTML table or the id of such to be parsed as input data. Related options ara startRow,
+ * endRow, startColumn and endColumn to delimit what part of the table is used.
  */
 
+/*global jQuery */
 (function (Highcharts) {	
 	
 	// Utilities
@@ -29,14 +96,28 @@
 	 */
 	init: function (options) {
 		this.options = options;
-		this.columns = [];
-		
-		
-		// Parse a CSV string if options.csv is given
-		this.parseCSV();
-		
-		// Parse a HTML table if options.table is given
-		this.parseTable();
+		this.columns = options.columns || this.rowsToColumns(options.rows) || [];
+
+		// No need to parse or interpret anything
+		if (this.columns.length) {
+			this.dataFound();
+
+		// Parse and interpret
+		} else {
+
+			// Parse a CSV string if options.csv is given
+			this.parseCSV();
+			
+			// Parse a HTML table if options.table is given
+			this.parseTable();
+
+			// Parse a Google Spreadsheet 
+			this.parseGoogleSpreadsheet();	
+		}
+
+	},
+
+	dataFound: function () {
 		
 		// Interpret the values into right types
 		this.parseTypes();
@@ -66,7 +147,11 @@
 			lines;
 			
 		if (csv) {
-			lines = csv.split(options.lineDelimiter || '\n');
+			
+			lines = csv
+				.replace(/\r\n/g, "\n") // Unix
+				.replace(/\r/g, "\n") // Mac
+				.split(options.lineDelimiter || "\n");
 			
 			each(lines, function (line, rowNo) {
 				if (rowNo >= startRow && rowNo <= endRow) {
@@ -81,7 +166,8 @@
 						}
 					});
 				}
-			});
+			}); 
+			this.dataFound();
 		}
 	},
 	
@@ -119,6 +205,58 @@
 					});
 				}
 			});
+
+			this.dataFound(); // continue
+		}
+	},
+
+	/**
+	 * TODO: 
+	 * - switchRowsAndColumns
+	 * - startRow, endRow etc.
+	 */
+	parseGoogleSpreadsheet: function () {
+		var self = this,
+			options = this.options,
+			googleSpreadsheetKey = options.googleSpreadsheetKey,
+			columns = this.columns;
+
+		if (googleSpreadsheetKey) {
+			jQuery.getJSON('https://spreadsheets.google.com/feeds/cells/' + 
+				  googleSpreadsheetKey + '/' + (options.googleSpreadsheetWorksheet || 'od6') +
+					  '/public/values?alt=json-in-script&callback=?',
+					  function (json) {
+					
+				// Prepare the data from the spreadsheat
+				var cells = json.feed.entry,
+					cell,
+					cellCount = cells.length,
+					colCount = 0,
+					rowCount = 0,
+					i;
+			
+				// First, find the total number of columns and rows that 
+				// are actually filled with data
+				for (i = 0; i < cellCount; i++) {
+					cell = cells[i];
+					colCount = Math.max(colCount, cell.gs$cell.col);
+					rowCount = Math.max(rowCount, cell.gs$cell.row);			
+				}
+			
+				// Set up arrays containing the column data
+				for (i = 0; i < colCount; i++) {
+					columns[i] = new Array(rowCount);
+				}
+				
+				// Loop over the cells and assign the value to the right
+				// place in the column arrays
+				for (i = 0; i < cellCount; i++) {
+					cell = cells[i];
+					columns[cell.gs$cell.col - 1][cell.gs$cell.row - 1] = 
+						cell.content.$t;
+				}
+				self.dataFound();
+			});
 		}
 	},
 	
@@ -141,7 +279,8 @@
 	 * Trim a string from whitespace
 	 */
 	trim: function (str) {
-		return str.replace(/^\s+|\s+$/g, '');
+		//return typeof str === 'number' ? str : str.replace(/^\s+|\s+$/g, ''); // fails with spreadsheet
+		return typeof str === 'string' ? str.replace(/^\s+|\s+$/g, '') : str;
 	},
 	
 	/**
@@ -176,7 +315,7 @@
 					}					
 				
 				} else { // string, continue to determine if it is a date string or really a string
-					dateVal = Date.parse(val);
+					dateVal = this.parseDate(val);
 					
 					if (col === 0 && typeof dateVal === 'number' && !isNaN(dateVal)) { // is date
 						columns[col][row] = dateVal;
@@ -188,9 +327,73 @@
 				}
 				
 			}
-		}		
+		}
+	},
+	//*
+	dateFormats: {
+		'YYYY-mm-dd': {
+			regex: '^([0-9]{4})-([0-9]{2})-([0-9]{2})$',
+			parser: function (match) {
+				return Date.UTC(+match[1], match[2] - 1, +match[3]);
+			}
+		}
+	},
+	// */
+	/**
+	 * Parse a date and return it as a number. Overridable through options.parseDate.
+	 */
+	parseDate: function (val) {
+		var parseDate = this.options.parseDate,
+			ret,
+			key,
+			format,
+			match;
+
+		if (parseDate) {
+			ret = parseDate;
+		}
+			
+		if (typeof val === 'string') {
+			for (key in this.dateFormats) {
+				format = this.dateFormats[key];
+				match = val.match(format.regex);
+				if (match) {
+					ret = format.parser(match);
+				}
+			}
+		}
+		return ret;
 	},
 	
+	/**
+	 * Reorganize rows into columns
+	 */
+	rowsToColumns: function (rows) {
+		var row,
+			rowsLength,
+			col,
+			colsLength,
+			columns;
+
+		if (rows) {
+			columns = [];
+			rowsLength = rows.length;
+			for (row = 0; row < rowsLength; row++) {
+				colsLength = rows[row].length;
+				for (col = 0; col < colsLength; col++) {
+					if (!columns[col]) {
+						columns[col] = [];
+					}
+					columns[col][row] = rows[row][col];
+				}
+			}
+		}
+		return columns;
+	},
+	
+	/**
+	 * A hook for working directly on the parsed columns
+	 */
 	parsed: function () {
 		if (this.options.parsed) {
 			this.options.parsed.call(this, this.columns);
@@ -274,4 +477,36 @@
 	Highcharts.data = function (options) {
 		return new Data(options);
 	};
+
+	// Extend Chart.init so that the Chart constructor accepts a new configuration
+	// option group, data.
+	Highcharts.wrap(Highcharts.Chart.prototype, 'init', function (proceed, userOptions, callback) {
+		var chart = this;
+
+		if (userOptions && userOptions.data) {
+			Highcharts.data(Highcharts.extend(userOptions.data, {
+				complete: function (dataOptions) {
+					var datasets = []; 
+					
+					// Don't merge the data arrays themselves
+					each(dataOptions.series, function (series, i) {
+						datasets[i] = series.data;
+						series.data = null;
+					});
+					
+					// Do the merge
+					userOptions = Highcharts.merge(dataOptions, userOptions);
+					
+					// Re-insert the data
+					each(datasets, function (data, i) {
+						userOptions.series[i].data = data;
+					});
+					proceed.call(chart, userOptions, callback);
+				}
+			}));
+		} else {
+			proceed.call(chart, userOptions, callback);
+		}
+	});
+
 }(Highcharts));
