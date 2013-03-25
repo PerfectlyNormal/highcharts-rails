@@ -7,7 +7,7 @@ Highcharts is not free for commercial use, so make sure you have a [valid licens
 
 Add the gem to the Gemfile
 
-    gem "highcharts-rails", "~> 2.3.0"
+    gem "highcharts-rails", "~> 3.0.0"
     # The gem version mirrors the included version of Highcharts
 
 ## Changes
@@ -33,6 +33,7 @@ Or the modules
     //= require highcharts/modules/canvas-tools
     //= require highcharts/modules/data
     //= require highcharts/modules/exporting
+    //= require highcharts/modules/funnel
 
 Or one of the themes
 

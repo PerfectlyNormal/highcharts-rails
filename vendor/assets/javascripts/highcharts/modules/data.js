@@ -1,7 +1,8 @@
 /**
- * @license Data plugin for Highcharts v0.1
+ * @license Data plugin for Highcharts
  *
- * (c) 2012 Torstein Hønsi
+ * (c) 2012-2013 Torstein Hønsi
+ * Last revision 2012-11-27
  *
  * License: www.highcharts.com/license
  */
@@ -44,7 +45,7 @@
  * A Google Spreadsheet key. See https://developers.google.com/gdata/samples/spreadsheet_sample
  * for general information on GS.
  *
- * - googleSpreadsheetKey : String 
+ * - googleSpreadsheetWorksheet : String 
  * The Google Spreadsheet worksheet. The available id's can be read from 
  * https://spreadsheets.google.com/feeds/worksheets/{key}/public/basic
  *
@@ -76,7 +77,9 @@
  * endRow, startColumn and endColumn to delimit what part of the table is used.
  */
 
+// JSLint options:
 /*global jQuery */
+
 (function (Highcharts) {	
 	
 	// Utilities
@@ -118,7 +121,6 @@
 	},
 
 	dataFound: function () {
-		
 		// Interpret the values into right types
 		this.parseTypes();
 		
@@ -213,13 +215,18 @@
 	/**
 	 * TODO: 
 	 * - switchRowsAndColumns
-	 * - startRow, endRow etc.
 	 */
 	parseGoogleSpreadsheet: function () {
 		var self = this,
 			options = this.options,
 			googleSpreadsheetKey = options.googleSpreadsheetKey,
-			columns = this.columns;
+			columns = this.columns,
+			startRow = options.startRow || 0,
+			endRow = options.endRow || Number.MAX_VALUE,
+			startColumn = options.startColumn || 0,
+			endColumn = options.endColumn || Number.MAX_VALUE,
+			gr, // google row
+			gc; // google column
 
 		if (googleSpreadsheetKey) {
 			jQuery.getJSON('https://spreadsheets.google.com/feeds/cells/' + 
@@ -245,15 +252,28 @@
 			
 				// Set up arrays containing the column data
 				for (i = 0; i < colCount; i++) {
-					columns[i] = new Array(rowCount);
+					if (i >= startColumn && i <= endColumn) {
+						// Create new columns with the length of either end-start or rowCount
+						columns[i - startColumn] = [];
+
+						// Setting the length to avoid jslint warning
+						columns[i - startColumn].length = Math.min(rowCount, endRow - startRow);
+					}
 				}
 				
 				// Loop over the cells and assign the value to the right
 				// place in the column arrays
 				for (i = 0; i < cellCount; i++) {
 					cell = cells[i];
-					columns[cell.gs$cell.col - 1][cell.gs$cell.row - 1] = 
-						cell.content.$t;
+					gr = cell.gs$cell.row - 1; // rows start at 1
+					gc = cell.gs$cell.col - 1; // columns start at 1
+
+					// If both row and col falls inside start and end
+					// set the transposed cell value in the newly created columns
+					if (gc >= startColumn && gc <= endColumn &&
+						gr >= startRow && gr <= endRow) {
+						columns[gc - startColumn][gr - startRow] = cell.content.$t;
+					}
 				}
 				self.dataFound();
 			});
@@ -322,7 +342,7 @@
 						columns[col].isDatetime = true;
 					
 					} else { // string
-						columns[col][row] = trimVal;
+						columns[col][row] = trimVal === '' ? null : trimVal;
 					}
 				}
 				
@@ -486,21 +506,17 @@
 		if (userOptions && userOptions.data) {
 			Highcharts.data(Highcharts.extend(userOptions.data, {
 				complete: function (dataOptions) {
-					var datasets = []; 
 					
-					// Don't merge the data arrays themselves
-					each(dataOptions.series, function (series, i) {
-						datasets[i] = series.data;
-						series.data = null;
-					});
-					
+					// Merge series configs
+					if (userOptions.series) {
+						each(userOptions.series, function (series, i) {
+							userOptions.series[i] = Highcharts.merge(series, dataOptions.series[i]);
+						});
+					}
+
 					// Do the merge
 					userOptions = Highcharts.merge(dataOptions, userOptions);
-					
-					// Re-insert the data
-					each(datasets, function (data, i) {
-						userOptions.series[i].data = data;
-					});
+
 					proceed.call(chart, userOptions, callback);
 				}
 			}));
