@@ -52,7 +52,8 @@ Highcharts, which makes up the majority of this gem, has [its own, separate lice
 The gem itself is released under the MIT license
 
 ## Signing
-Release tags and all released gems (from 3.0.0 onwards) is signed using [rubygems-openpgp](https://www.rubygems-openpgp-ca.org/) using my personal key, and the fingerprint is also included below.
+
+Release tags and all released gems (from 3.0.0 onwards) is signed using [rubygems-openpgp](https://www.rubygems-openpgp-ca.org/) using [my personal key](https://eastblue.org/blag/contact/), and the fingerprint is also included below.
 
     pub   4096R/CCFBB9EF 2013-02-01 [expires: 2017-02-01]
           Key fingerprint = 6077 34FC 32B6 6041 BF06  43F2 205D 9784 CCFB B9EF
