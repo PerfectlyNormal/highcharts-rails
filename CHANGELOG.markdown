@@ -1,3 +1,9 @@
+# 3.0.1 / 2013-04-09
+
+* Updated Highcharts to 3.0.1
+* Moved assets from vendor/assets to app/assets, since the entire point of the
+  gem is to deliver those assets.
+
 # 3.0.0 / 2013-03-25
 
 * Updated Highcharts to 3.0.0
