@@ -22,6 +22,10 @@ module Highcharts
     end
 
     def call(env)
+      dup._call(env)
+    end
+
+    def _call(env)
       with_rescues do
         raise MissingLibrary.new("Could not find batik-rasterizer.jar in #{options[:batik].inspect}") unless File.exists?(options[:batik].to_s)
 
