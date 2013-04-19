@@ -1,3 +1,7 @@
+# 3.0.1.5 / unreleased
+
+* Add a Rack endpoint for exporting charts to image files
+
 # 3.0.1 / 2013-04-09
 
 * Updated Highcharts to 3.0.1

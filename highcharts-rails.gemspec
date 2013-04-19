@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_dependency "railties", ">= 3.1"
+  s.add_dependency "cocaine",  "~> 0.4.0"
   s.add_development_dependency "bundler", "~> 1.0"
   s.add_development_dependency "rails",   ">= 3.1"
 end
