@@ -43,7 +43,7 @@ Or one of the themes
     //= require highcharts/themes/grid
     //= require highcharts/themes/skies
 
-Other than that, refer to the [Highcharts documentation](http://highcharts.com/documentation/how-to-use)
+Other than that, refer to the [Highcharts documentation](http://docs.highcharts.com/#home)
 
 ## Export endpoint
 
@@ -95,7 +95,7 @@ but would also like to avoid `begin; require 'cocaine'; rescue LoadError; ...; e
 
 ## Licensing
 
-Highcharts, which makes up the majority of this gem, has [its own, separate licensing](http://highcharts.com/license).
+Highcharts, which makes up the majority of this gem, has [its own, separate licensing](http://shop.highsoft.com/highcharts.html).
 
 The gem itself is released under the MIT license
 
