@@ -88,7 +88,12 @@ module Highcharts
 
     def write_svg_to_file(contents)
       file = ::Tempfile.new(["highcharts-input", ".svg"], Dir.tmpdir, encoding: 'utf-8')
-      file.puts contents
+
+      # Replace bad bytes in the input without transcoding,
+      # making sure the contents is actually valid UTF-8.
+      # https://bugs.ruby-lang.org/issues/6321#note-17
+      file.puts contents.force_encoding("utf-8").
+                         encode("utf-8", "binary", undef: :replace)
       file.flush
       file
     end
