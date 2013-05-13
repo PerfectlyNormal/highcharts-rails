@@ -87,13 +87,12 @@ module Highcharts
     end
 
     def write_svg_to_file(contents)
-      file = ::Tempfile.new(["highcharts-input", ".svg"], Dir.tmpdir, encoding: 'utf-8')
-
-      # Replace bad bytes in the input without transcoding,
-      # making sure the contents is actually valid UTF-8.
-      # https://bugs.ruby-lang.org/issues/6321#note-17
-      file.puts contents.force_encoding("utf-8").
-                         encode("utf-8", "binary", undef: :replace)
+      # Create the file with the same encoding as the contents.
+      # Trying to transcode it to UTF-8 has just caused tons of trouble, and
+      # Batik seems to manage it just fine on its own when given the file
+      # and whatever encoding it seems to contain.
+      file = ::Tempfile.new(["highcharts-input", ".svg"], Dir.tmpdir, encoding: contents.encoding)
+      file.puts contents
       file.flush
       file
     end
