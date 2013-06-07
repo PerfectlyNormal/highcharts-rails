@@ -45,54 +45,6 @@ Or one of the themes
 
 Other than that, refer to the [Highcharts documentation](http://docs.highcharts.com/#home)
 
-## Export endpoint
-
-This gem contains a Rack endpoint for converting the chart to a downloadable file.
-It is not required by default, so to use it, `require
-'highcharts/export_endpoint'`
-
-The endpoint is basically a port of the [PHP version made available](https://github.com/highslide-software/highcharts.com/blob/master/exporting-server/php/php-batik/index.php).
-It currently needs a lot of cleanup, but it is working fine for me. Your milage
-may vary.
-
-It uses [Apache Batik](http://xmlgraphics.apache.org/batik/) for the conversion, which must be
-installed separately, as well as a Java Runtime Environment.
-
-It expects to find a JRE in `/usr/bin/java`, and Batik in
-`/usr/share/java/batik-rasterizer.jar`, but both paths are configurable.
-
-Example usage in Rails:
-
-    # config/routes.rb
-    require 'highcharts/export_endpoint'
-
-    MyRailsApp::Application.routes.draw do
-      ...
-      mount Highcharts::ExportEndpoint.new({
-        java_path: "/usr/bin/java",
-        batik: "/usr/share/java/batik-rasterizer.jar"
-      }), at: "highcharts-export"
-      ...
-    end
-
-    # When rendering the chart
-    new Highcharts.Chart({
-      ...
-      exporting: {
-        url: "/highcharts-export",
-        ...
-      }
-    })
-
-### Cocaine
-
-The exporting endpoint uses [Cocaine](https://github.com/thoughtbot/cocaine) for
-handling the command lines and arguments and so on.
-
-I don't know a way to get optional dependencies in the gemspec, so for now
-that gets added whether you want it or not. I'd like to get this fixed,
-but would also like to avoid `begin; require 'cocaine'; rescue LoadError; ...; end` and similar hacks.
-
 ## Licensing
 
 Highcharts, which makes up the majority of this gem, has [its own, separate licensing](http://shop.highsoft.com/highcharts.html).
