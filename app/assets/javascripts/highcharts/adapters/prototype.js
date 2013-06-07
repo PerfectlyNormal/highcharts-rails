@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v3.0.1 (2013-04-09)
+ * @license Highcharts JS v3.0.2 (2013-06-05)
  * Prototype adapter
  *
  * @author Michael Nelson, Torstein Hønsi.
@@ -206,8 +206,8 @@ return {
 		$A(arr).each(fn);
 	},
 	
-	inArray: function (item, arr) {
-		return arr.indexOf(item);
+	inArray: function (item, arr, from) {
+		return arr ? arr.indexOf(item, from) : -1;
 	},
 
 	/**
