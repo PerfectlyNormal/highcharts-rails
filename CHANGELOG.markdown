@@ -1,3 +1,9 @@
+# 3.0.2 / 2013-06-07
+
+* Updated Highcharts to 3.0.2
+* Removed the Rack endpoint
+  (https://github.com/PerfectlyNormal/highcharts-rails/issues/9)
+
 # 3.0.1.5 / 2013-05-08
 
 * Add a Rack endpoint for exporting charts to image files
