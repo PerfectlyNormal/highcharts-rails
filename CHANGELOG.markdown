@@ -1,4 +1,4 @@
-# 3.0.1.5 / unreleased
+# 3.0.1.5 / 2013-05-08
 
 * Add a Rack endpoint for exporting charts to image files
 
