@@ -1,3 +1,7 @@
+# 3.0.3 / 2013-08-01
+
+* Updated Highcharts to 3.0.3
+
 # 3.0.2 / 2013-06-07
 
 * Updated Highcharts to 3.0.2
