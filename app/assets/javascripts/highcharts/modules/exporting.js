@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v3.0.2 (2013-06-05)
+ * @license Highcharts JS v3.0.3 (2013-07-31)
  * Exporting module
  *
  * (c) 2010-2013 Torstein Hønsi
@@ -269,7 +269,7 @@ extend(Chart.prototype, {
 					userMin = extremes.userMin,
 					userMax = extremes.userMax;
 
-				if (userMin !== UNDEFINED || userMax !== UNDEFINED) {
+				if (axisCopy && (userMin !== UNDEFINED || userMax !== UNDEFINED)) {
 					axisCopy.setExtremes(userMin, userMax, true, false);
 				}
 			});
@@ -319,9 +319,6 @@ extend(Chart.prototype, {
 		// IE9 beta bugs with innerHTML. Test again with final IE9.
 		svg = svg.replace(/(url\(#highcharts-[0-9]+)&quot;/g, '$1')
 			.replace(/&quot;/g, "'");
-		if (svg.match(/ xmlns="/g).length === 2) {
-			svg = svg.replace(/xmlns="[^"]+"/, '');
-		}
 
 		return svg;
 	},
@@ -342,8 +339,8 @@ extend(Chart.prototype, {
 				chartOptions, 
 				{
 					exporting: {
-						sourceWidth: options.sourceWidth || chartExportingOptions.sourceWidth, // docs: option and parameter in exportChart()
-						sourceHeight: options.sourceHeight || chartExportingOptions.sourceHeight // docs
+						sourceWidth: options.sourceWidth || chartExportingOptions.sourceWidth,
+						sourceHeight: options.sourceHeight || chartExportingOptions.sourceHeight
 					}
 				}
 			));
@@ -519,7 +516,7 @@ extend(Chart.prototype, {
 			menuStyle.left = (x - menuPadding) + PX;
 		}
 		// if outside bottom, bottom align it
-		if (y + height + chart.exportMenuHeight > chartHeight) {
+		if (y + height + chart.exportMenuHeight > chartHeight && button.alignOptions.verticalAlign !== 'top') {
 			menuStyle.bottom = (chartHeight - y - menuPadding)  + PX;
 		} else {
 			menuStyle.top = (y + height - menuPadding) + PX;

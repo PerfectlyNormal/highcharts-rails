@@ -2,7 +2,7 @@
 // @compilation_level SIMPLE_OPTIMIZATIONS
 
 /**
- * @license Highcharts JS v3.0.2 (2013-06-05)
+ * @license Highcharts JS v3.0.3 (2013-07-31)
  *
  * (c) 2009-2013 Torstein Hønsi
  *
@@ -33,8 +33,6 @@ var arrayMin = Highcharts.arrayMin,
 	math = Math,
 	mathRound = math.round,
 	mathFloor = math.floor,
-	mathCeil = math.ceil,
-	mathMin = math.min,
 	mathMax = math.max,
 	noop = function () {};/**
  * The Pane object allows options that are common to a set of X and Y axes.
@@ -559,7 +557,7 @@ wrap(tickProto, 'getLabelPosition', function (proceed, x, y, label, horiz, label
 		optionsY = labelOptions.y,
 		ret,
 		align = labelOptions.align,
-		angle = (axis.translate(this.pos) + axis.startAngleRad + Math.PI / 2) / Math.PI * 180;
+		angle = ((axis.translate(this.pos) + axis.startAngleRad + Math.PI / 2) / Math.PI * 180) % 360;
 	
 	if (axis.isRadial) {
 		ret = axis.getPosition(this.pos, (axis.center[2] / 2) + pick(labelOptions.distance, -25));
@@ -697,13 +695,13 @@ seriesTypes.arearange = Highcharts.extendClass(seriesTypes.area, {
 				point.y = null;
 			} else if (low === null) {
 				point.plotLow = point.plotY = null;
-				point.plotHigh = yAxis.toPixels(high, true);
+				point.plotHigh = yAxis.translate(high, 0, 1, 0, 1);
 			} else if (high === null) {
 				point.plotLow = plotY;
 				point.plotHigh = null;
 			} else {
 				point.plotLow = plotY;
-				point.plotHigh = yAxis.toPixels(high, true);
+				point.plotHigh = yAxis.translate(high, 0, 1, 0, 1);
 			}
 		});
 	},
@@ -873,15 +871,26 @@ seriesTypes.columnrange = extendClass(seriesTypes.arearange, {
 
 		// Set plotLow and plotHigh
 		each(series.points, function (point) {
-			var shapeArgs = point.shapeArgs;
-			
+			var shapeArgs = point.shapeArgs,
+				minPointLength = series.options.minPointLength,
+				heightDifference,
+				height,
+				y;
+
 			point.plotHigh = plotHigh = yAxis.translate(point.high, 0, 1, 0, 1);
 			point.plotLow = point.plotY;
-			
+
 			// adjust shape
-			shapeArgs.y = plotHigh;
-			shapeArgs.height = point.plotY - plotHigh;
-			
+			y = plotHigh;
+			height = point.plotY - plotHigh;
+
+			if (height < minPointLength) {
+				heightDifference = (minPointLength - height);
+				height += heightDifference;
+				y -= heightDifference / 2;
+			}
+			shapeArgs.height = height;
+			shapeArgs.y = y;
 		});
 	},
 	trackerGroups: ['group', 'dataLabels'],
@@ -891,7 +900,8 @@ seriesTypes.columnrange = extendClass(seriesTypes.arearange, {
 	drawTracker: colProto.drawTracker,
 	animate: colProto.animate,
 	getColumnMetrics: colProto.getColumnMetrics
-});/* 
+});
+/* 
  * The GaugeSeries class
  */
 
@@ -1129,11 +1139,12 @@ defaultPlotOptions.boxplot = merge(defaultPlotOptions.column, {
 	threshold: null,
 	tooltip: {
 		pointFormat: '<span style="color:{series.color};font-weight:bold">{series.name}</span><br/>' +
-			'Minimum: {point.low}<br/>' +
-			'Lower quartile: {point.q1}<br/>' +
+			'Maximum: {point.high}<br/>' +
+			'Upper quartile: {point.q3}<br/>' +
 			'Median: {point.median}<br/>' +
-			'Higher quartile: {point.q3}<br/>' +
-			'Maximum: {point.high}<br/>'
+			'Lower quartile: {point.q1}<br/>' +
+			'Minimum: {point.low}<br/>'
+			
 	},
 	//whiskerColor: null,
 	whiskerLength: '50%',
@@ -1421,99 +1432,6 @@ seriesTypes.errorbar = extendClass(seriesTypes.boxplot, {
  * Start Waterfall series code                                                *
  *****************************************************************************/
 
-wrap(axisProto, 'getSeriesExtremes', function (proceed, renew) {
-	// Run uber method
-	proceed.call(this, renew);
-
-	if (this.isXAxis) {
-		return;
-	}
-
-	var axis = this,
-		visitedStacks = [],
-		resetMinMax = true;
-
-
-	// recalculate extremes for each waterfall stack
-	each(axis.series, function (series) {
-		// process only visible, waterfall series, one from each stack
-		if (!series.visible || !series.stackKey || series.type !== 'waterfall' || HighchartsAdapter.inArray(series.stackKey) !== -1) {
-			return;
-		}
-
-		// reset previously found dataMin and dataMax, do it only once
-		if (resetMinMax) {
-			axis.dataMin = axis.dataMax = null;
-			resetMinMax = false;
-		}
-
-
-		var yData = series.processedYData,
-			yDataLength = yData.length,
-			seriesDataMin = yData[0],
-			seriesDataMax = yData[0],
-			threshold = series.options.threshold,
-			stacks = axis.stacks,
-			stackKey = series.stackKey,
-			negKey = '-' + stackKey,
-			total,
-			previous,
-			key,
-			i;
-
-
-		// set new stack totals including preceding values, finds new min and max values
-		for (i = 0; i < yDataLength; i++) {
-			key = yData[i] < threshold ? negKey : stackKey;
-			total = stacks[key][i].total;
-
-			if (i > threshold) {
-				total += previous;
-				stacks[key][i].setTotal(total);
-
-				// _cum is used to avoid conflict with Series.translate method
-				stacks[key][i]._cum = null;
-			}
-
-
-			// find min / max values
-			if (total < seriesDataMin) {
-				seriesDataMin = total;
-			}
-
-			if (total > seriesDataMax) {
-				seriesDataMax = total;
-			}
-
-			previous = total;
-		}
-
-
-		// set new extremes
-		series.dataMin = seriesDataMin;
-		series.dataMax = seriesDataMax;
-		axis.dataMin = mathMin(pick(axis.dataMin, seriesDataMin), seriesDataMin, threshold);
-		axis.dataMax = mathMax(pick(axis.dataMax, seriesDataMax), seriesDataMax, threshold);
-
-		// remember series' stack key
-		visitedStacks.push(series.stackKey);
-
-
-
-		// Adjust to threshold. This code is duplicated from the parent getSeriesExtremes method.
-		if (typeof threshold === 'number') {
-			if (axis.dataMin >= threshold) {
-				axis.dataMin = threshold;
-				axis.ignoreMinPadding = true;
-			} else if (axis.dataMax < threshold) {
-				axis.dataMax = threshold;
-				axis.ignoreMaxPadding = true;
-			}
-		}
-	});
-});
-
-
 // 1 - set default options
 defaultPlotOptions.waterfall = merge(defaultPlotOptions.column, {
 	lineWidth: 1,
@@ -1529,7 +1447,7 @@ seriesTypes.waterfall = extendClass(seriesTypes.column, {
 
 	upColorProp: 'fill',
 
-	pointArrayMap: ['y', 'low'],
+	pointArrayMap: ['low', 'y'],
 
 	pointValKey: 'y',
 
@@ -1537,7 +1455,9 @@ seriesTypes.waterfall = extendClass(seriesTypes.column, {
 	 * Init waterfall series, force stacking
 	 */
 	init: function (chart, options) {
+		// force stacking
 		options.stacking = true;
+
 		seriesTypes.column.prototype.init.call(this, chart, options);
 	},
 
@@ -1551,84 +1471,60 @@ seriesTypes.waterfall = extendClass(seriesTypes.column, {
 			axis = series.yAxis,
 			len,
 			i,
-
 			points,
 			point,
 			shapeArgs,
-			sum,
-			sumStart,
-			subSum,
-			subSumStart,
-			edges,
-			cumulative,
-			prevStack,
-			prevY,
 			stack,
+			y,
+			previousY,
+			stackPoint,
+			threshold = options.threshold,
 			crispCorr = (options.borderWidth % 2) / 2;
 
 		// run column series translate
 		seriesTypes.column.prototype.translate.apply(this);
 
+		previousY = threshold;
+		points = series.points;
 
-		points = this.points;
-		subSumStart = sumStart = points[0];
-		sum = subSum = points[0].y;
-
-		for (i = 1, len = points.length; i < len; i++) {
+		for (i = 0, len = points.length; i < len; i++) {
 			// cache current point object
 			point = points[i];
 			shapeArgs = point.shapeArgs;
 
-			// get current and previous stack
+			// get current stack
 			stack = series.getStack(i);
-			prevStack = series.getStack(i - 1);
-			prevY = series.getStackY(prevStack);
+			stackPoint = stack.points[series.index];
 
-			// set new intermediate sum values after reset
-			if (subSumStart === null) {
-				subSumStart = point;
-				subSum = 0;
+			// override point value for sums
+			if (isNaN(point.y)) {
+				point.y = series.yData[i];
 			}
 
-			// sum only points with value, not intermediate or total sum
-			if (point.y && !point.isSum && !point.isIntermediateSum) {
-				sum += point.y;
-				subSum += point.y;
-			}
+			// up points
+			y = mathMax(previousY, previousY + point.y) + stackPoint[0];
+			shapeArgs.y = axis.translate(y, 0, 1);
 
-			// calculate sum points
+
+			// sum points
 			if (point.isSum || point.isIntermediateSum) {
+				shapeArgs.y = axis.translate(stackPoint[1], 0, 1);
+				shapeArgs.height = axis.translate(stackPoint[0], 0, 1) - shapeArgs.y;
 
-				if (point.isIntermediateSum) {
-					edges = series.getSumEdges(subSumStart, points[i - 1]);
-					point.y = subSum;
-					subSumStart = null;
-				} else {
-					edges = series.getSumEdges(sumStart, points[i - 1]);
-					point.y = sum;
-				}
-
-				shapeArgs.y = point.plotY = edges[1];
-				shapeArgs.height = edges[0] - edges[1];
-
-			// calculate other (up or down) points based on y value
+			// if it's not the sum point, update previous stack end position
 			} else {
-				// use "_cum" instead of already calculated "cum" to avoid reverse ordering negative columns
-				cumulative = stack._cum === null ? prevStack.total : stack._cum;
-				stack._cum = cumulative + point.y;
-
-				if (point.y < 0) {
-					shapeArgs.y = mathCeil(axis.translate(cumulative, 0, 1)) - crispCorr;
-					shapeArgs.height = mathCeil(axis.translate(stack._cum, 0, 1) - shapeArgs.y);
-				} else {
-					if (prevStack.total + point.y < 0) {
-						shapeArgs.y = axis.translate(stack._cum, 0, 1);
-					}
-
-					shapeArgs.height = mathFloor(prevY - shapeArgs.y);
-				}
-
+				previousY += stack.total;
 			}
+
+			// negative points
+			if (shapeArgs.height < 0) {
+				shapeArgs.y += shapeArgs.height;
+				shapeArgs.height *= -1;
+			}
+
+			point.plotY = shapeArgs.y = mathRound(shapeArgs.y) - crispCorr;
+			shapeArgs.height = mathRound(shapeArgs.height);
+			point.yBottom = shapeArgs.y + shapeArgs.height;
 		}
 	},
 
@@ -1636,44 +1532,48 @@ seriesTypes.waterfall = extendClass(seriesTypes.column, {
 	 * Call default processData then override yData to reflect waterfall's extremes on yAxis
 	 */
 	processData: function (force) {
-		Series.prototype.processData.call(this, force);
-
 		var series = this,
 			options = series.options,
 			yData = series.yData,
-			length = yData.length,
-			prev,
-			curr,
+			points = series.points,
+			point,
+			dataLength = yData.length,
+			threshold = options.threshold || 0,
 			subSum,
 			sum,
+			dataMin,
+			dataMax,
+			y,
 			i;
 
-		prev = sum = subSum = options.threshold;
+		sum = subSum = dataMin = dataMax = threshold;
 
-		for (i = 0; i < length; i++) {
-			curr = yData[i];
+		for (i = 0; i < dataLength; i++) {
+			y = yData[i];
+			point = points ? points[i] : {};
 
-			// processed yData only if it's not already processed
-			if (curr !== null && typeof curr !== 'number') {
-
-				if (curr === "sum") {
-					yData[i] = null;
-
-				} else if (curr === "intermediateSum") {
-					yData[i] = null;
-					subSum = prev;
-
-				} else {
-					yData[i] = curr[0];// + prev;
-				}
-
-				prev = yData[i];
+			if (y === "sum" || point.isSum) {
+				yData[i] = sum;
+			} else if (y === "intermediateSum" || point.isIntermediateSum) {
+				yData[i] = subSum;
+				subSum = threshold;
+			} else {
+				sum += y;
+				subSum += y;
 			}
+			dataMin = Math.min(sum, dataMin);
+			dataMax = Math.max(sum, dataMax);
 		}
+
+		Series.prototype.processData.call(this, force);
+
+		// Record extremes
+		series.dataMin = dataMin;
+		series.dataMax = dataMax;
 	},
 
 	/**
-	 * Return [y, low] array, if low is not defined, it's replaced with null for further calculations
+	 * Return y value or string if point is sum
 	 */
 	toYData: function (pt) {
 		if (pt.isSum) {
@@ -1682,7 +1582,7 @@ seriesTypes.waterfall = extendClass(seriesTypes.column, {
 			return "intermediateSum";
 		}
 
-		return [pt.y];
+		return pt.y;
 	},
 
 	/**
@@ -1750,6 +1650,14 @@ seriesTypes.waterfall = extendClass(seriesTypes.column, {
 		return path;
 	},
 
+	/**
+	 * Extremes are recorded in processData
+	 */
+	getExtremes: noop,
+
+	/**
+	 * Return stack for given index
+	 */
 	getStack: function (i) {
 		var axis = this.yAxis,
 			stacks = axis.stacks,
@@ -1760,31 +1668,6 @@ seriesTypes.waterfall = extendClass(seriesTypes.column, {
 		}
 
 		return stacks[key][i];
-	},
-
-	getStackY: function (stack) {
-		return mathCeil(this.yAxis.translate(stack.total, null, true));
-	},
-
-	/**
-	 * Return array of top and bottom position for sum column based on given edge points
-	 */
-	getSumEdges: function (pointA, pointB) {
-		var valueA,
-			valueB,
-			tmp,
-			threshold = this.options.threshold;
-
-		valueA = pointA.y >= threshold ? pointA.shapeArgs.y + pointA.shapeArgs.height : pointA.shapeArgs.y;
-		valueB = pointB.y >= threshold ? pointB.shapeArgs.y : pointB.shapeArgs.y + pointB.shapeArgs.height;
-
-		if (valueB > valueA) {
-			tmp = valueA;
-			valueA = valueB;
-			valueB = tmp;
-		}
-
-		return [valueA, valueB];
 	},
 
 	drawGraph: Series.prototype.drawGraph
@@ -1819,6 +1702,7 @@ defaultPlotOptions.bubble = merge(defaultPlotOptions.scatter, {
 	tooltip: {
 		pointFormat: '({point.x}, {point.y}), Size: {point.z}'
 	},
+	turboThreshold: 0, // docs: exclude from bubbles
 	zThreshold: 0
 });
 
@@ -1976,7 +1860,8 @@ seriesTypes.bubble = extendClass(seriesTypes.scatter, {
 			radius
 		).attr({
 			zIndex: 3
-		}).add(item.legendGroup);		
+		}).add(item.legendGroup);
+		item.legendSymbol.isMarker = true;	
 		
 	},
 	
@@ -2108,12 +1993,28 @@ seriesProto.toXY = function (point) {
 	point.rectPlotY = plotY;
 	
 	// Record the angle in degrees for use in tooltip
-	point.clientX = plotX / Math.PI * 180;
+	point.clientX = ((plotX / Math.PI * 180) + this.xAxis.pane.options.startAngle) % 360;
 	
 	// Find the polar plotX and plotY
 	xy = this.xAxis.postTranslate(point.plotX, this.yAxis.len - plotY);
 	point.plotX = point.polarPlotX = xy.x - chart.plotLeft;
 	point.plotY = point.polarPlotY = xy.y - chart.plotTop;
+};
+
+/** 
+ * Order the tooltip points to get the mouse capture ranges correct. #1915. 
+ */
+seriesProto.orderTooltipPoints = function (points) {
+	if (this.chart.polar) {
+		points.sort(function (a, b) {
+			return a.clientX - b.clientX;
+		});
+
+		// Wrap mouse tracking around to capture movement on the segment to the left
+		// of the north point (#1469).
+		points[0].wrappedClientX = points[0].clientX + 360;
+		points.push(points[0]);
+	}
 };
 
 
