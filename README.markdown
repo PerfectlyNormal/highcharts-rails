@@ -27,6 +27,7 @@ To include one of the other adapters
 
     //= require highcharts/adapters/mootools
     //= require highcharts/adapters/prototype
+    //= require highcharts/adapters/standalone
 
 Or the modules
 
