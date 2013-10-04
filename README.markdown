@@ -38,7 +38,7 @@ Or the modules
     //= require highcharts/modules/exporting
     //= require highcharts/modules/funnel
     //= require highcharts/modules/heatmap
-    //= require highcharts/modules/no-data-to_display
+    //= require highcharts/modules/no-data-to-display
 
 Or one of the themes
 
