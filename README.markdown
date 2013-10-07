@@ -25,16 +25,20 @@ In your JavaScript manifest (e.g. `application.js`)
 
 To include one of the other adapters
 
-    //= require highcharts/adapters/mootools
-    //= require highcharts/adapters/prototype
-    //= require highcharts/adapters/standalone
+    //= require highcharts/adapters/mootools-adapter
+    //= require highcharts/adapters/prototype-adapter
+    //= require highcharts/adapters/standalone-framework
 
 Or the modules
 
+    //= require highcharts/modules/annotations
     //= require highcharts/modules/canvas-tools
     //= require highcharts/modules/data
+    //= require highcharts/modules/drilldown
     //= require highcharts/modules/exporting
     //= require highcharts/modules/funnel
+    //= require highcharts/modules/heatmap
+    //= require highcharts/modules/no-data-to-display
 
 Or one of the themes
 
