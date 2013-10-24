@@ -1,1 +1,54 @@
-(function(b){var k=b.seriesTypes,l=b.each;k.heatmap=b.extendClass(k.map,{colorKey:"z",useMapGeometry:!1,pointArrayMap:["y","z"],translate:function(){var c=this,b=c.options,i=Number.MAX_VALUE,j=Number.MIN_VALUE;c.generatePoints();l(c.data,function(a){var e=a.x,f=a.y,d=a.z,g=(b.colsize||1)/2,h=(b.rowsize||1)/2;a.path=["M",e-g,f-h,"L",e+g,f-h,"L",e+g,f+h,"L",e-g,f+h,"Z"];a.shapeType="path";a.shapeArgs={d:c.translatePath(a.path)};typeof d==="number"&&(d>j?j=d:d<i&&(i=d))});c.translateColors(i,j)},getBox:function(){}})})(Highcharts);
+(function (H) {
+	var seriesTypes = H.seriesTypes,
+		each = H.each;
+	
+	seriesTypes.heatmap = H.extendClass(seriesTypes.map, {
+		colorKey: 'z',
+		useMapGeometry: false,
+		pointArrayMap: ['y', 'z'],
+		translate: function () {
+			var series = this,
+				options = series.options,
+				dataMin = Number.MAX_VALUE,
+				dataMax = Number.MIN_VALUE;
+
+			series.generatePoints();
+	
+			each(series.data, function (point) {
+				var x = point.x,
+					y = point.y,
+					value = point.z,
+					xPad = (options.colsize || 1) / 2,
+					yPad = (options.rowsize || 1) / 2;
+
+				point.path = [
+					'M', x - xPad, y - yPad,
+					'L', x + xPad, y - yPad,
+					'L', x + xPad, y + yPad,
+					'L', x - xPad, y + yPad,
+					'Z'
+				];
+				
+				point.shapeType = 'path';
+				point.shapeArgs = {
+					d: series.translatePath(point.path)
+				};
+				
+				if (typeof value === 'number') {
+					if (value > dataMax) {
+						dataMax = value;
+					} else if (value < dataMin) {
+						dataMin = value;
+					}
+				}
+			});
+			
+			series.translateColors(dataMin, dataMax);
+		},
+		
+		getBox: function () {},
+		getExtremes: H.Series.prototype.getExtremes
+			
+	});
+	
+}(Highcharts));

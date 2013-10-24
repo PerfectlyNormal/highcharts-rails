@@ -1,7 +1,401 @@
-(function(i,C){function m(a){return typeof a==="number"}function n(a){return a!==D&&a!==null}var D,p,r,s=i.Chart,t=i.extend,z=i.each;r=["path","rect","circle"];p={top:0,left:0,center:0.5,middle:0.5,bottom:1,right:1};var u=C.inArray,A=i.merge,B=function(){this.init.apply(this,arguments)};B.prototype={init:function(a,d){var c=d.shape&&d.shape.type;this.chart=a;var b,f;f={xAxis:0,yAxis:0,title:{style:{},text:"",x:0,y:0},shape:{params:{stroke:"#000000",fill:"transparent",strokeWidth:2}}};b={circle:{params:{x:0,
-y:0}}};if(b[c])f.shape=A(f.shape,b[c]);this.options=A({},f,d)},render:function(a){var d=this.chart,c=this.chart.renderer,b=this.group,f=this.title,e=this.shape,h=this.options,i=h.title,l=h.shape;if(!b)b=this.group=c.g();if(!e&&l&&u(l.type,r)!==-1)e=this.shape=c[h.shape.type](l.params),e.add(b);if(!f&&i)f=this.title=c.label(i),f.add(b);b.add(d.annotations.group);this.linkObjects();a!==!1&&this.redraw()},redraw:function(){var a=this.options,d=this.chart,c=this.group,b=this.title,f=this.shape,e=this.linkedObject,
-h=d.xAxis[a.xAxis],v=d.yAxis[a.yAxis],l=a.width,w=a.height,x=p[a.anchorY],y=p[a.anchorX],j,o,g,q;if(e)j=e instanceof i.Point?"point":e instanceof i.Series?"series":null,j==="point"?(a.xValue=e.x,a.yValue=e.y,o=e.series):j==="series"&&(o=e),c.visibility!==o.group.visibility&&c.attr({visibility:o.group.visibility});e=n(a.xValue)?h.toPixels(a.xValue+h.minPointOffset)-h.minPixelPadding:a.x;j=n(a.yValue)?v.toPixels(a.yValue):a.y;if(!isNaN(e)&&!isNaN(j)&&m(e)&&m(j)){b&&(b.attr(a.title),b.css(a.title.style));
-if(f){b=t({},a.shape.params);if(a.units==="values"){for(g in b)u(g,["width","x"])>-1?b[g]=h.translate(b[g]):u(g,["height","y"])>-1&&(b[g]=v.translate(b[g]));b.width&&(b.width-=h.toPixels(0)-h.left);b.x&&(b.x+=h.minPixelPadding);if(a.shape.type==="path"){g=b.d;o=e;for(var r=j,s=g.length,k=0;k<s;)typeof g[k]==="number"&&typeof g[k+1]==="number"?(g[k]=h.toPixels(g[k])-o,g[k+1]=v.toPixels(g[k+1])-r,k+=2):k+=1}}a.shape.type==="circle"&&(b.x+=b.r,b.y+=b.r);f.attr(b)}c.bBox=null;if(!m(l))q=c.getBBox(),l=
-q.width;if(!m(w))q||(q=c.getBBox()),w=q.height;if(!m(y))y=p.center;if(!m(x))x=p.center;e-=l*y;j-=w*x;d.animation&&n(c.translateX)&&n(c.translateY)?c.animate({translateX:e,translateY:j}):c.translate(e,j)}},destroy:function(){var a=this,d=this.chart.annotations.allItems,c=d.indexOf(a);c>-1&&d.splice(c,1);z(["title","shape","group"],function(b){a[b]&&(a[b].destroy(),a[b]=null)});a.group=a.title=a.shape=a.chart=a.options=null},update:function(a,d){t(this.options,a);this.linkObjects();this.render(d)},
-linkObjects:function(){var a=this.chart,d=this.linkedObject,c=d&&(d.id||d.options.id),b=this.options.linkedTo;if(n(b)){if(!n(d)||b!==c)this.linkedObject=a.get(b)}else this.linkedObject=null}};t(s.prototype,{annotations:{add:function(a,d){var c=this.allItems,b=this.chart,f,e;Object.prototype.toString.call(a)==="[object Array]"||(a=[a]);for(e=a.length;e--;)f=new B(b,a[e]),c.push(f),f.render(d)},redraw:function(){z(this.allItems,function(a){a.redraw()})}}});s.prototype.callbacks.push(function(a){var d=
-a.options.annotations,c;c=a.renderer.g("annotations");c.attr({zIndex:7});c.add();a.annotations.allItems=[];a.annotations.chart=a;a.annotations.group=c;Object.prototype.toString.call(d)==="[object Array]"&&d.length>0&&a.annotations.add(a.options.annotations);i.addEvent(a,"redraw",function(){a.annotations.redraw()})})})(Highcharts,HighchartsAdapter);
+(function (Highcharts, HighchartsAdapter) {
+
+var UNDEFINED,
+	ALIGN_FACTOR,
+	ALLOWED_SHAPES,
+	Chart = Highcharts.Chart,
+	extend = Highcharts.extend,
+	each = Highcharts.each;
+
+ALLOWED_SHAPES = ["path", "rect", "circle"];
+
+ALIGN_FACTOR = {
+	top: 0,
+	left: 0,
+	center: 0.5,
+	middle: 0.5,
+	bottom: 1,
+	right: 1
+};
+
+
+// Highcharts helper methods
+var inArray = HighchartsAdapter.inArray,
+	merge = Highcharts.merge;
+
+function defaultOptions(shapeType) {
+	var shapeOptions,
+		options;
+
+	options = {
+		xAxis: 0,
+		yAxis: 0,
+		title: {
+			style: {},
+			text: "",
+			x: 0,
+			y: 0
+		},
+		shape: {
+			params: {
+				stroke: "#000000",
+				fill: "transparent",
+				strokeWidth: 2
+			}
+		}
+	};
+
+	shapeOptions = {
+		circle: {
+			params: {
+				x: 0,
+				y: 0
+			}
+		}
+	};
+
+	if (shapeOptions[shapeType]) {
+		options.shape = merge(options.shape, shapeOptions[shapeType]);
+	}
+
+	return options;
+}
+
+function isArray(obj) {
+	return Object.prototype.toString.call(obj) === '[object Array]';
+}
+
+function isNumber(n) {
+	return typeof n === 'number';
+}
+
+function defined(obj) {
+	return obj !== UNDEFINED && obj !== null;
+}
+
+function translatePath(d, xAxis, yAxis, xOffset, yOffset) {
+	var len = d.length,
+		i = 0;
+
+	while (i < len) {
+		if (typeof d[i] === 'number' && typeof d[i + 1] === 'number') {
+			d[i] = xAxis.toPixels(d[i]) - xOffset;
+			d[i + 1] = yAxis.toPixels(d[i + 1]) - yOffset;
+			i += 2;
+		} else {
+			i += 1;
+		}
+	}
+
+	return d;
+}
+
+
+// Define annotation prototype
+var Annotation = function () {
+	this.init.apply(this, arguments);
+};
+Annotation.prototype = {
+	/* 
+	 * Initialize the annotation
+	 */
+	init: function (chart, options) {
+		var shapeType = options.shape && options.shape.type;
+
+		this.chart = chart;
+		this.options = merge({}, defaultOptions(shapeType), options);
+	},
+
+	/*
+	 * Render the annotation
+	 */
+	render: function (redraw) {
+		var annotation = this,
+			chart = this.chart,
+			renderer = annotation.chart.renderer,
+			group = annotation.group,
+			title = annotation.title,
+			shape = annotation.shape,
+			options = annotation.options,
+			titleOptions = options.title,
+			shapeOptions = options.shape;
+
+		if (!group) {
+			group = annotation.group = renderer.g();
+		}
+
+
+		if (!shape && shapeOptions && inArray(shapeOptions.type, ALLOWED_SHAPES) !== -1) {
+			shape = annotation.shape = renderer[options.shape.type](shapeOptions.params);
+			shape.add(group);
+		}
+
+		if (!title && titleOptions) {
+			title = annotation.title = renderer.label(titleOptions);
+			title.add(group);
+		}
+
+		group.add(chart.annotations.group);
+
+		// link annotations to point or series
+		annotation.linkObjects();
+
+		if (redraw !== false) {
+			annotation.redraw();
+		}
+	},
+
+	/*
+	 * Redraw the annotation title or shape after options update
+	 */
+	redraw: function () {
+		var options = this.options,
+			chart = this.chart,
+			group = this.group,
+			title = this.title,
+			shape = this.shape,
+			linkedTo = this.linkedObject,
+			xAxis = chart.xAxis[options.xAxis],
+			yAxis = chart.yAxis[options.yAxis],
+			width = options.width,
+			height = options.height,
+			anchorY = ALIGN_FACTOR[options.anchorY],
+			anchorX = ALIGN_FACTOR[options.anchorX],
+			resetBBox = false,
+			shapeParams,
+			linkType,
+			series,
+			param,
+			bbox,
+			x,
+			y;
+
+		if (linkedTo) {
+			linkType = (linkedTo instanceof Highcharts.Point) ? 'point' :
+						(linkedTo instanceof Highcharts.Series) ? 'series' : null;
+
+			if (linkType === 'point') {
+				options.xValue = linkedTo.x;
+				options.yValue = linkedTo.y;
+				series = linkedTo.series;
+			} else if (linkType === 'series') {
+				series = linkedTo;
+			}
+
+			if (group.visibility !== series.group.visibility) {
+				group.attr({
+					visibility: series.group.visibility
+				});
+			}
+		}
+
+
+		// Based on given options find annotation pixel position
+		x = (defined(options.xValue) ? xAxis.toPixels(options.xValue + xAxis.minPointOffset) - xAxis.minPixelPadding : options.x);
+		y = defined(options.yValue) ? yAxis.toPixels(options.yValue) : options.y;
+
+		if (isNaN(x) || isNaN(y) || !isNumber(x) || !isNumber(y)) {
+			return;
+		}
+
+
+		if (title) {
+			title.attr(options.title);
+			title.css(options.title.style);
+			resetBBox = true;
+		}
+
+		if (shape) {
+			shapeParams = extend({}, options.shape.params);
+
+			if (options.units === 'values') {
+				for (param in shapeParams) {
+					if (inArray(param, ['width', 'x']) > -1) {
+						shapeParams[param] = xAxis.translate(shapeParams[param]);
+					} else if (inArray(param, ['height', 'y']) > -1) {
+						shapeParams[param] = yAxis.translate(shapeParams[param]);
+					}
+				}
+
+				if (shapeParams.width) {
+					shapeParams.width -= xAxis.toPixels(0) - xAxis.left;
+				}
+
+				if (shapeParams.x) {
+					shapeParams.x += xAxis.minPixelPadding;
+				}
+
+				if (options.shape.type === 'path') {
+					translatePath(shapeParams.d, xAxis, yAxis, x, y);
+				}
+			}
+
+			// move the center of the circle to shape x/y
+			if (options.shape.type === 'circle') {
+				shapeParams.x += shapeParams.r;
+				shapeParams.y += shapeParams.r;
+			}
+
+			resetBBox = true;
+			shape.attr(shapeParams);
+		}
+
+		group.bBox = null;
+
+		// If annotation width or height is not defined in options use bounding box size
+		if (!isNumber(width)) {
+			bbox = group.getBBox();
+			width = bbox.width;
+		}
+
+		if (!isNumber(height)) {
+			// get bbox only if it wasn't set before
+			if (!bbox) {
+				bbox = group.getBBox();
+			}
+
+			height = bbox.height;
+		}
+
+		// Calculate anchor point
+		if (!isNumber(anchorX)) {
+			anchorX = ALIGN_FACTOR.center;
+		}
+
+		if (!isNumber(anchorY)) {
+			anchorY = ALIGN_FACTOR.center;
+		}
+
+		// Translate group according to its dimension and anchor point
+		x = x - width * anchorX;
+		y = y - height * anchorY;
+
+		if (chart.animation && defined(group.translateX) && defined(group.translateY)) {
+			group.animate({
+				translateX: x,
+				translateY: y
+			});
+		} else {
+			group.translate(x, y);
+		}
+	},
+
+	/*
+	 * Destroy the annotation
+	 */
+	destroy: function () {
+		var annotation = this,
+			chart = this.chart,
+			allItems = chart.annotations.allItems,
+			index = allItems.indexOf(annotation);
+
+		if (index > -1) {
+			allItems.splice(index, 1);
+		}
+
+		each(['title', 'shape', 'group'], function (element) {
+			if (annotation[element]) {
+				annotation[element].destroy();
+				annotation[element] = null;
+			}
+		});
+
+		annotation.group = annotation.title = annotation.shape = annotation.chart = annotation.options = null;
+	},
+
+	/*
+	 * Update the annotation with a given options
+	 */
+	update: function (options, redraw) {
+		extend(this.options, options);
+
+		// update link to point or series
+		this.linkObjects();
+
+		this.render(redraw);
+	},
+
+	linkObjects: function () {
+		var annotation = this,
+			chart = annotation.chart,
+			linkedTo = annotation.linkedObject,
+			linkedId = linkedTo && (linkedTo.id || linkedTo.options.id),
+			options = annotation.options,
+			id = options.linkedTo;
+
+		if (!defined(id)) {
+			annotation.linkedObject = null;
+		} else if (!defined(linkedTo) || id !== linkedId) {
+			annotation.linkedObject = chart.get(id);
+		}
+	}
+};
+
+
+// Add annotations methods to chart prototype
+extend(Chart.prototype, {
+	annotations: {
+		/*
+		 * Unified method for adding annotations to the chart
+		 */
+		add: function (options, redraw) {
+			var annotations = this.allItems,
+				chart = this.chart,
+				item,
+				len;
+
+			if (!isArray(options)) {
+				options = [options];
+			}
+
+			len = options.length;
+
+			while (len--) {
+				item = new Annotation(chart, options[len]);
+				annotations.push(item);
+				item.render(redraw);
+			}
+		},
+
+		/**
+		 * Redraw all annotations, method used in chart events
+		 */
+		redraw: function () {
+			each(this.allItems, function (annotation) {
+				annotation.redraw();
+			});
+		}
+	}
+});
+
+
+// Initialize on chart load
+Chart.prototype.callbacks.push(function (chart) {
+	var options = chart.options.annotations,
+		group;
+
+	group = chart.renderer.g("annotations");
+	group.attr({
+		zIndex: 7
+	});
+	group.add();
+
+	// initialize empty array for annotations
+	chart.annotations.allItems = [];
+
+	// link chart object to annotations
+	chart.annotations.chart = chart;
+
+	// link annotations group element to the chart
+	chart.annotations.group = group;
+
+	if (isArray(options) && options.length > 0) {
+		chart.annotations.add(chart.options.annotations);
+	}
+
+	// update annotations after chart redraw
+	Highcharts.addEvent(chart, 'redraw', function () {
+		chart.annotations.redraw();
+	});
+});
+}(Highcharts, HighchartsAdapter));

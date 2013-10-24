@@ -1,27 +1,1273 @@
-/*
- Map plugin v0.1 for Highcharts
+/**
+ * @license Map plugin v0.1 for Highcharts
+ *
+ * (c) 2011-2013 Torstein Hønsi
+ *
+ * License: www.highcharts.com/license
+ */
 
- (c) 2011-2013 Torstein Hønsi
+/* 
+ * See www.H.com/studies/world-map.htm for use case.
+ *
+ * To do:
+ * - Optimize long variable names and alias adapter methods and Highcharts namespace variables
+ * - Zoom and pan GUI
+ */
+/*global HighchartsAdapter*/
+(function (H) {
+	var UNDEFINED,
+		Axis = H.Axis,
+		Chart = H.Chart,
+		Point = H.Point,
+		Pointer = H.Pointer,
+		SVGRenderer = H.SVGRenderer,
+		VMLRenderer = H.VMLRenderer,
+		symbols = SVGRenderer.prototype.symbols,
+		each = H.each,
+		extend = H.extend,
+		extendClass = H.extendClass,
+		merge = H.merge,
+		pick = H.pick,
+		numberFormat = H.numberFormat,
+		defaultOptions = H.getOptions(),
+		seriesTypes = H.seriesTypes,
+		inArray = HighchartsAdapter.inArray,
+		plotOptions = defaultOptions.plotOptions,
+		wrap = H.wrap,
+		Color = H.Color,
+		noop = function () {};
 
- License: www.highcharts.com/license
-*/
-(function(g){function x(a,b,c){for(var d=4,e=[];d--;)e[d]=Math.round(b.rgba[d]+(a.rgba[d]-b.rgba[d])*(1-c));return"rgba("+e.join(",")+")"}var r=g.Axis,y=g.Chart,s=g.Point,z=g.Pointer,l=g.each,v=g.extend,p=g.merge,n=g.pick,A=g.numberFormat,B=g.getOptions(),k=g.seriesTypes,q=B.plotOptions,t=g.wrap,u=g.Color,w=function(){};B.mapNavigation={buttonOptions:{align:"right",verticalAlign:"bottom",x:0,width:18,height:18,style:{fontSize:"15px",fontWeight:"bold",textAlign:"center"}},buttons:{zoomIn:{onclick:function(){this.mapZoom(0.5)},
-text:"+",y:-32},zoomOut:{onclick:function(){this.mapZoom(2)},text:"-",y:0}}};g.splitPath=function(a){var b,a=a.replace(/([A-Za-z])/g," $1 "),a=a.replace(/^\s*/,"").replace(/\s*$/,""),a=a.split(/[ ,]+/);for(b=0;b<a.length;b++)/[a-zA-Z]/.test(a[b])||(a[b]=parseFloat(a[b]));return a};g.maps={};t(r.prototype,"getSeriesExtremes",function(a){var b=this.isXAxis,c,d,e=[];l(this.series,function(a,b){if(a.useMapGeometry)e[b]=a.xData,a.xData=[]});a.call(this);c=n(this.dataMin,Number.MAX_VALUE);d=n(this.dataMax,
-Number.MIN_VALUE);l(this.series,function(a,i){if(a.useMapGeometry)c=Math.min(c,a[b?"minX":"minY"]),d=Math.max(d,a[b?"maxX":"maxY"]),a.xData=e[i]});this.dataMin=c;this.dataMax=d});t(r.prototype,"setAxisTranslation",function(a){var b=this.chart,c=b.plotWidth/b.plotHeight,d=this.isXAxis,e=b.xAxis[0];a.call(this);if(b.options.chart.type==="map"&&!d&&e.transA!==void 0)this.transA=e.transA=Math.min(this.transA,e.transA),a=(e.max-e.min)/(this.max-this.min),e=a>c?this:e,c=(e.max-e.min)*e.transA,e.minPixelPadding=
-(e.len-c)/2});t(y.prototype,"render",function(a){var b=this,c=b.options.mapNavigation;a.call(b);b.renderMapNavigation();c.zoomOnDoubleClick&&g.addEvent(b.container,"dblclick",function(a){b.pointer.onContainerDblClick(a)});c.zoomOnMouseWheel&&g.addEvent(b.container,document.onmousewheel===void 0?"DOMMouseScroll":"mousewheel",function(a){b.pointer.onContainerMouseWheel(a)})});v(z.prototype,{onContainerDblClick:function(a){var b=this.chart,a=this.normalize(a);b.isInsidePlot(a.chartX-b.plotLeft,a.chartY-
-b.plotTop)&&b.mapZoom(0.5,b.xAxis[0].toValue(a.chartX),b.yAxis[0].toValue(a.chartY))},onContainerMouseWheel:function(a){var b=this.chart,c,a=this.normalize(a);c=a.detail||-(a.wheelDelta/120);b.isInsidePlot(a.chartX-b.plotLeft,a.chartY-b.plotTop)&&b.mapZoom(c>0?2:0.5,b.xAxis[0].toValue(a.chartX),b.yAxis[0].toValue(a.chartY))}});t(z.prototype,"init",function(a,b,c){a.call(this,b,c);if(c.mapNavigation.enableTouchZoom)this.pinchX=this.pinchHor=this.pinchY=this.pinchVert=!0});v(y.prototype,{renderMapNavigation:function(){var a=
-this,b=this.options.mapNavigation,c=b.buttons,d,e,f,i=function(){this.handler.call(a)};if(b.enableButtons)for(d in c)if(c.hasOwnProperty(d))f=p(b.buttonOptions,c[d]),e=a.renderer.button(f.text,0,0,i).attr({width:f.width,height:f.height}).css(f.style).add(),e.handler=f.onclick,e.align(v(f,{width:e.width,height:e.height}),null,"spacingBox")},fitToBox:function(a,b){l([["x","width"],["y","height"]],function(c){var d=c[0],c=c[1];a[d]+a[c]>b[d]+b[c]&&(a[c]>b[c]?(a[c]=b[c],a[d]=b[d]):a[d]=b[d]+b[c]-a[c]);
-a[c]>b[c]&&(a[c]=b[c]);a[d]<b[d]&&(a[d]=b[d])});return a},mapZoom:function(a,b,c){if(!this.isMapZooming){var d=this,e=d.xAxis[0],f=e.max-e.min,i=n(b,e.min+f/2),b=f*a,f=d.yAxis[0],h=f.max-f.min,c=n(c,f.min+h/2);a*=h;i-=b/2;h=c-a/2;c=n(d.options.chart.animation,!0);b=d.fitToBox({x:i,y:h,width:b,height:a},{x:e.dataMin,y:f.dataMin,width:e.dataMax-e.dataMin,height:f.dataMax-f.dataMin});e.setExtremes(b.x,b.x+b.width,!1);f.setExtremes(b.y,b.y+b.height,!1);if(e=c?c.duration||500:0)d.isMapZooming=!0,setTimeout(function(){d.isMapZooming=
-!1},e);d.redraw()}}});q.map=p(q.scatter,{animation:!1,nullColor:"#F8F8F8",borderColor:"silver",borderWidth:1,marker:null,stickyTracking:!1,dataLabels:{verticalAlign:"middle"},turboThreshold:0,tooltip:{followPointer:!0,pointFormat:"{point.name}: {point.y}<br/>"},states:{normal:{animation:!0}}});r=g.extendClass(s,{applyOptions:function(a,b){var c=s.prototype.applyOptions.call(this,a,b);if(c.path&&typeof c.path==="string")c.path=c.options.path=g.splitPath(c.path);return c},onMouseOver:function(){clearTimeout(this.colorInterval);
-s.prototype.onMouseOver.call(this)},onMouseOut:function(){var a=this,b=+new Date,c=u(a.options.color),d=u(a.pointAttr.hover.fill),e=a.series.options.states.normal.animation,f=e&&(e.duration||500);if(f&&c.rgba.length===4&&d.rgba.length===4)delete a.pointAttr[""].fill,clearTimeout(a.colorInterval),a.colorInterval=setInterval(function(){var e=(new Date-b)/f,h=a.graphic;e>1&&(e=1);h&&h.attr("fill",x(d,c,e));e>=1&&clearTimeout(a.colorInterval)},13);s.prototype.onMouseOut.call(a)}});k.map=g.extendClass(k.scatter,
-{type:"map",pointAttrToOptions:{stroke:"borderColor","stroke-width":"borderWidth",fill:"color"},colorKey:"y",pointClass:r,trackerGroups:["group","markerGroup","dataLabelsGroup"],getSymbol:w,supportsDrilldown:!0,getExtremesFromAll:!0,useMapGeometry:!0,init:function(a){var b=this,c=a.options.legend.valueDecimals,d=[],e,f,i,h,j,o,m;o=a.options.legend.layout==="horizontal";g.Series.prototype.init.apply(this,arguments);j=b.options.colorRange;if(h=b.options.valueRanges)l(h,function(a){f=a.from;i=a.to;e=
-"";f===void 0?e="< ":i===void 0&&(e="> ");f!==void 0&&(e+=A(f,c));f!==void 0&&i!==void 0&&(e+=" - ");i!==void 0&&(e+=A(i,c));d.push(g.extend({chart:b.chart,name:e,options:{},drawLegendSymbol:k.area.prototype.drawLegendSymbol,visible:!0,setState:function(){},setVisible:function(){}},a))}),b.legendItems=d;else if(j)f=j.from,i=j.to,h=j.fromLabel,j=j.toLabel,m=o?[0,0,1,0]:[0,1,0,0],o||(o=h,h=j,j=o),o={linearGradient:{x1:m[0],y1:m[1],x2:m[2],y2:m[3]},stops:[[0,f],[1,i]]},d=[{chart:b.chart,options:{},fromLabel:h,
-toLabel:j,color:o,drawLegendSymbol:this.drawLegendSymbolGradient,visible:!0,setState:function(){},setVisible:function(){}}],b.legendItems=d},drawLegendSymbol:k.area.prototype.drawLegendSymbol,drawLegendSymbolGradient:function(a,b){var c=a.options.symbolPadding,d=n(a.options.padding,8),e,f,i=this.chart.renderer.fontMetrics(a.options.itemStyle.fontSize).h,h=a.options.layout==="horizontal",j;j=n(a.options.rectangleLength,200);h?(e=-(c/2),f=0):(e=-j+a.baseline-c/2,f=d+i);b.fromText=this.chart.renderer.text(b.fromLabel,
-f,e).attr({zIndex:2}).add(b.legendGroup);f=b.fromText.getBBox();b.legendSymbol=this.chart.renderer.rect(h?f.x+f.width+c:f.x-i-c,f.y,h?j:i,h?i:j,2).attr({zIndex:1}).add(b.legendGroup);j=b.legendSymbol.getBBox();b.toText=this.chart.renderer.text(b.toLabel,j.x+j.width+c,h?e:j.y+j.height-c).attr({zIndex:2}).add(b.legendGroup);e=b.toText.getBBox();h?(a.offsetWidth=f.width+j.width+e.width+c*2+d,a.itemY=i+d):(a.offsetWidth=Math.max(f.width,e.width)+c+j.width+d,a.itemY=j.height+d,a.itemX=c)},getBox:function(a){var b=
-Number.MIN_VALUE,c=Number.MAX_VALUE,d=Number.MIN_VALUE,e=Number.MAX_VALUE;l(a||this.options.data,function(a){for(var i=a.path,h=i.length,j=!1,g=Number.MIN_VALUE,m=Number.MAX_VALUE,k=Number.MIN_VALUE,l=Number.MAX_VALUE;h--;)typeof i[h]==="number"&&!isNaN(i[h])&&(j?(g=Math.max(g,i[h]),m=Math.min(m,i[h])):(k=Math.max(k,i[h]),l=Math.min(l,i[h])),j=!j);a._maxX=g;a._minX=m;a._maxY=k;a._minY=l;b=Math.max(b,g);c=Math.min(c,m);d=Math.max(d,k);e=Math.min(e,l)});this.minY=e;this.maxY=d;this.minX=c;this.maxX=
-b},translatePath:function(a){var b=!1,c=this.xAxis,d=this.yAxis,e,a=[].concat(a);for(e=a.length;e--;)typeof a[e]==="number"&&(a[e]=b?Math.round(c.translate(a[e])):Math.round(d.len-d.translate(a[e])),b=!b);return a},setData:function(){g.Series.prototype.setData.apply(this,arguments);this.getBox()},translate:function(){var a=this,b=Number.MAX_VALUE,c=Number.MIN_VALUE;a.generatePoints();l(a.data,function(d){d.shapeType="path";d.shapeArgs={d:a.translatePath(d.path)};if(typeof d.y==="number")if(d.y>c)c=
-d.y;else if(d.y<b)b=d.y});a.translateColors(b,c)},translateColors:function(a,b){var c=this.options,d=c.valueRanges,e=c.colorRange,f=this.colorKey,i,h;e&&(i=u(e.from),h=u(e.to));l(this.data,function(g){var k=g[f],m,l,n;if(d)for(n=d.length;n--;){if(m=d[n],i=m.from,h=m.to,(i===void 0||k>=i)&&(h===void 0||k<=h)){l=m.color;break}}else e&&k!==void 0&&(m=1-(b-k)/(b-a),l=k===null?c.nullColor:x(i,h,m));if(l)g.color=null,g.options.color=l})},drawGraph:w,drawDataLabels:w,drawPoints:function(){var a=this.xAxis,
-b=this.yAxis,c=this.colorKey;l(this.data,function(a){a.plotY=1;if(a[c]===null)a[c]=0,a.isNull=!0});k.column.prototype.drawPoints.apply(this);l(this.data,function(d){var e=d.dataLabels,f=a.toPixels(d._minX,!0),g=a.toPixels(d._maxX,!0),h=b.toPixels(d._minY,!0),j=b.toPixels(d._maxY,!0);d.plotX=Math.round(f+(g-f)*n(e&&e.anchorX,0.5));d.plotY=Math.round(h+(j-h)*n(e&&e.anchorY,0.5));d.isNull&&(d[c]=null)});g.Series.prototype.drawDataLabels.call(this)},animateDrilldown:function(a){var b=this.chart.plotBox,
-c=this.chart.drilldownLevels[this.chart.drilldownLevels.length-1],d=c.bBox,e=this.chart.options.drilldown.animation;if(!a)a=Math.min(d.width/b.width,d.height/b.height),c.shapeArgs={scaleX:a,scaleY:a,translateX:d.x,translateY:d.y},l(this.points,function(a){a.graphic.attr(c.shapeArgs).animate({scaleX:1,scaleY:1,translateX:0,translateY:0},e)}),delete this.animate},animateDrillupFrom:function(a){k.column.prototype.animateDrillupFrom.call(this,a)},animateDrillupTo:function(a){k.column.prototype.animateDrillupTo.call(this,
-a)}});q.mapline=p(q.map,{lineWidth:1,backgroundColor:"none"});k.mapline=g.extendClass(k.map,{type:"mapline",pointAttrToOptions:{stroke:"color","stroke-width":"lineWidth",fill:"backgroundColor"},drawLegendSymbol:k.line.prototype.drawLegendSymbol});q.mappoint=p(q.scatter,{dataLabels:{enabled:!0,format:"{point.name}",color:"black",style:{textShadow:"0 0 5px white"}}});k.mappoint=g.extendClass(k.scatter,{type:"mappoint"});g.Map=function(a,b){var c={endOnTick:!1,gridLineWidth:0,labels:{enabled:!1},lineWidth:0,
-minPadding:0,maxPadding:0,startOnTick:!1,tickWidth:0,title:null},d;d=a.series;a.series=null;a=p({chart:{type:"map",panning:"xy"},xAxis:c,yAxis:p(c,{reversed:!0})},a,{chart:{inverted:!1}});a.series=d;return new g.Chart(a,b)}})(Highcharts);
+	// Add language
+	extend(defaultOptions.lang, {
+		zoomIn: 'Zoom in',
+		zoomOut: 'Zoom out'
+	});
+
+	/*
+	 * Return an intermediate color between two colors, according to pos where 0
+	 * is the from color and 1 is the to color
+	 */
+	function tweenColors(from, to, pos) {
+		var i = 4,
+			val,
+			rgba = [];
+
+		while (i--) {
+			val = to.rgba[i] + (from.rgba[i] - to.rgba[i]) * (1 - pos);
+			rgba[i] = i === 3 ? val : Math.round(val); // Do not round opacity
+		}
+		return 'rgba(' + rgba.join(',') + ')';
+	}
+
+	// Set the default map navigation options
+	defaultOptions.mapNavigation = {
+		buttonOptions: {
+			alignTo: 'plotBox',
+			align: 'left',
+			verticalAlign: 'top',
+			x: 0,
+			width: 18,
+			height: 18,
+			style: {
+				fontSize: '15px',
+				fontWeight: 'bold',
+				textAlign: 'center'
+			},
+			theme: {
+				'stroke-width': 1
+			}
+		},
+		buttons: {
+			zoomIn: {
+				onclick: function () {
+					this.mapZoom(0.5);
+				},
+				text: '+',
+				y: 0
+			},
+			zoomOut: {
+				onclick: function () {
+					this.mapZoom(2);
+				},
+				text: '-',
+				y: 28
+			}
+		}
+		// enabled: false,
+		// enableButtons: null, // inherit from enabled
+		// enableTouchZoom: null, // inherit from enabled
+		// enableDoubleClickZoom: null, // inherit from enabled
+		// enableDoubleClickZoomTo: false
+		// enableMouseWheelZoom: null, // inherit from enabled
+	};
+	
+	/**
+	 * Utility for reading SVG paths directly.
+	 */
+	H.splitPath = function (path) {
+		var i;
+
+		// Move letters apart
+		path = path.replace(/([A-Za-z])/g, ' $1 ');
+		// Trim
+		path = path.replace(/^\s*/, "").replace(/\s*$/, "");
+		
+		// Split on spaces and commas
+		path = path.split(/[ ,]+/);
+		
+		// Parse numbers
+		for (i = 0; i < path.length; i++) {
+			if (!/[a-zA-Z]/.test(path[i])) {
+				path[i] = parseFloat(path[i]);
+			}
+		}
+		return path;
+	};
+
+	// A placeholder for map definitions
+	H.maps = {};
+	
+	/**
+	 * Override to use the extreme coordinates from the SVG shape, not the
+	 * data values
+	 */
+	wrap(Axis.prototype, 'getSeriesExtremes', function (proceed) {
+		var isXAxis = this.isXAxis,
+			dataMin,
+			dataMax,
+			xData = [];
+
+		// Remove the xData array and cache it locally so that the proceed method doesn't use it
+		if (isXAxis) {
+			each(this.series, function (series, i) {
+				if (series.useMapGeometry) {
+					xData[i] = series.xData;
+					series.xData = [];
+				}
+			});
+		}
+
+		// Call base to reach normal cartesian series (like mappoint)
+		proceed.call(this);
+
+		// Run extremes logic for map and mapline
+		if (isXAxis) {
+			dataMin = pick(this.dataMin, Number.MAX_VALUE);
+			dataMax = pick(this.dataMax, Number.MIN_VALUE);
+			each(this.series, function (series, i) {
+				if (series.useMapGeometry) {
+					dataMin = Math.min(dataMin, pick(series.minX, dataMin));
+					dataMax = Math.max(dataMax, pick(series.maxX, dataMin));
+					series.xData = xData[i]; // Reset xData array
+				}
+			});
+			
+			this.dataMin = dataMin;
+			this.dataMax = dataMax;
+		}
+	});
+	
+	/**
+	 * Override axis translation to make sure the aspect ratio is always kept
+	 */
+	wrap(Axis.prototype, 'setAxisTranslation', function (proceed) {
+		var chart = this.chart,
+			mapRatio,
+			plotRatio = chart.plotWidth / chart.plotHeight,
+			isXAxis = this.isXAxis,
+			adjustedAxisLength,
+			xAxis = chart.xAxis[0],
+			padAxis;
+		
+		// Run the parent method
+		proceed.call(this);
+		
+		// On Y axis, handle both
+		if (chart.options.chart.type === 'map' && !isXAxis && xAxis.transA !== UNDEFINED) {
+			
+			// Use the same translation for both axes
+			this.transA = xAxis.transA = Math.min(this.transA, xAxis.transA);
+			
+			mapRatio = (xAxis.max - xAxis.min) / (this.max - this.min);
+			
+			// What axis to pad to put the map in the middle
+			padAxis = mapRatio > plotRatio ? this : xAxis;
+			
+			// Pad it
+			adjustedAxisLength = (padAxis.max - padAxis.min) * padAxis.transA;
+			padAxis.minPixelPadding = (padAxis.len - adjustedAxisLength) / 2;
+		}
+	});
+
+
+	//--- Start zooming and panning features
+	wrap(Chart.prototype, 'render', function (proceed) {
+		var chart = this,
+			mapNavigation = chart.options.mapNavigation;
+
+		proceed.call(chart);
+
+		// Render the plus and minus buttons
+		chart.renderMapNavigation();
+
+		// Add the double click event
+		if (pick(mapNavigation.enableDoubleClickZoom, mapNavigation.enabled) || mapNavigation.enableDoubleClickZoomTo) {
+			H.addEvent(chart.container, 'dblclick', function (e) {
+				chart.pointer.onContainerDblClick(e);
+			});
+		}
+
+		// Add the mousewheel event
+		if (pick(mapNavigation.enableMouseWheelZoom, mapNavigation.enabled)) {
+			H.addEvent(chart.container, document.onmousewheel === undefined ? 'DOMMouseScroll' : 'mousewheel', function (e) {
+				chart.pointer.onContainerMouseWheel(e);
+			});
+		}
+	});
+
+	// Extend the Pointer
+	extend(Pointer.prototype, {
+
+		/**
+		 * The event handler for the doubleclick event
+		 */
+		onContainerDblClick: function (e) {
+			var chart = this.chart;
+
+			e = this.normalize(e);
+
+			if (chart.options.mapNavigation.enableDoubleClickZoomTo) {
+				if (chart.pointer.inClass(e.target, 'highcharts-tracker')) {
+					chart.zoomToShape(chart.hoverPoint);
+				}
+			} else if (chart.isInsidePlot(e.chartX - chart.plotLeft, e.chartY - chart.plotTop)) {
+				chart.mapZoom(
+					0.5,
+					chart.xAxis[0].toValue(e.chartX),
+					chart.yAxis[0].toValue(e.chartY)
+				);
+			}
+		},
+
+		/**
+		 * The event handler for the mouse scroll event
+		 */
+		onContainerMouseWheel: function (e) {
+			var chart = this.chart,
+				delta;
+
+			e = this.normalize(e);
+
+			// Firefox uses e.detail, WebKit and IE uses wheelDelta
+			delta = e.detail || -(e.wheelDelta / 120);
+			if (chart.isInsidePlot(e.chartX - chart.plotLeft, e.chartY - chart.plotTop)) {
+				chart.mapZoom(
+					delta > 0 ? 2 : 0.5,
+					chart.xAxis[0].toValue(e.chartX),
+					chart.yAxis[0].toValue(e.chartY)
+				);
+			}
+		}
+	});
+	
+	// Implement the pinchType option
+	wrap(Pointer.prototype, 'init', function (proceed, chart, options) {
+
+		proceed.call(this, chart, options);
+
+		// Pinch status
+		if (pick(options.mapNavigation.enableTouchZoom, options.mapNavigation.enabled)) {
+			this.pinchX = this.pinchHor = 
+				this.pinchY = this.pinchVert = true;
+		}
+	});
+
+	// Extend the pinchTranslate method to preserve fixed ratio when zooming
+	wrap(Pointer.prototype, 'pinchTranslate', function (proceed, zoomHor, zoomVert, pinchDown, touches, transform, selectionMarker, clip, lastValidTouch) {
+		var xBigger;
+
+		proceed.call(this, zoomHor, zoomVert, pinchDown, touches, transform, selectionMarker, clip, lastValidTouch);
+
+		// Keep ratio
+		if (this.chart.options.chart.type === 'map') {
+			xBigger = transform.scaleX > transform.scaleY;
+			this.pinchTranslateDirection(
+				!xBigger, 
+				pinchDown, 
+				touches, 
+				transform, 
+				selectionMarker, 
+				clip, 
+				lastValidTouch, 
+				xBigger ? transform.scaleX : transform.scaleY
+			);
+		}
+	});
+
+	// Add events to the Chart object itself
+	extend(Chart.prototype, {
+		renderMapNavigation: function () {
+			var chart = this,
+				options = this.options.mapNavigation,
+				buttons = options.buttons,
+				n,
+				button,
+				buttonOptions,
+				attr,
+				states,
+				outerHandler = function () { 
+					this.handler.call(chart); 
+				};
+
+			if (pick(options.enableButtons, options.enabled)) {
+				for (n in buttons) {
+					if (buttons.hasOwnProperty(n)) {
+						buttonOptions = merge(options.buttonOptions, buttons[n]);
+						attr = buttonOptions.theme;
+						states = attr.states;
+						button = chart.renderer.button(
+								buttonOptions.text, 
+								0, 
+								0, 
+								outerHandler, 
+								attr, 
+								states && states.hover,
+								states && states.select, 
+								0, 
+								n === 'zoomIn' ? 'topbutton' : 'bottombutton'
+							)
+							.attr({
+								width: buttonOptions.width,
+								height: buttonOptions.height,
+								title: chart.options.lang[n],
+								zIndex: 5
+							})
+							.css(buttonOptions.style)
+							.add();
+						button.handler = buttonOptions.onclick;
+						button.align(extend(buttonOptions, { width: button.width, height: 2 * button.height }), null, buttonOptions.alignTo);
+					}
+				}
+			}
+		},
+
+		/**
+		 * Fit an inner box to an outer. If the inner box overflows left or right, align it to the sides of the
+		 * outer. If it overflows both sides, fit it within the outer. This is a pattern that occurs more places
+		 * in Highcharts, perhaps it should be elevated to a common utility function.
+		 */
+		fitToBox: function (inner, outer) {
+			each([['x', 'width'], ['y', 'height']], function (dim) {
+				var pos = dim[0],
+					size = dim[1];
+
+				if (inner[pos] + inner[size] > outer[pos] + outer[size]) { // right overflow
+					if (inner[size] > outer[size]) { // the general size is greater, fit fully to outer
+						inner[size] = outer[size];
+						inner[pos] = outer[pos];
+					} else { // align right
+						inner[pos] = outer[pos] + outer[size] - inner[size];
+					}
+				}
+				if (inner[size] > outer[size]) {
+					inner[size] = outer[size];
+				}
+				if (inner[pos] < outer[pos]) {
+					inner[pos] = outer[pos];
+				}
+			});
+			
+
+			return inner;
+		},
+
+		/**
+		 * Zoom the map in or out by a certain amount. Less than 1 zooms in, greater than 1 zooms out.
+		 */
+		mapZoom: function (howMuch, centerXArg, centerYArg) {
+
+			if (this.isMapZooming) {
+				return;
+			}
+
+			var chart = this,
+				xAxis = chart.xAxis[0],
+				xRange = xAxis.max - xAxis.min,
+				centerX = pick(centerXArg, xAxis.min + xRange / 2),
+				newXRange = xRange * howMuch,
+				yAxis = chart.yAxis[0],
+				yRange = yAxis.max - yAxis.min,
+				centerY = pick(centerYArg, yAxis.min + yRange / 2),
+				newYRange = yRange * howMuch,
+				newXMin = centerX - newXRange / 2,
+				newYMin = centerY - newYRange / 2,
+				animation = pick(chart.options.chart.animation, true),
+				delay,
+				newExt = chart.fitToBox({
+					x: newXMin,
+					y: newYMin,
+					width: newXRange,
+					height: newYRange
+				}, {
+					x: xAxis.dataMin,
+					y: yAxis.dataMin,
+					width: xAxis.dataMax - xAxis.dataMin,
+					height: yAxis.dataMax - yAxis.dataMin
+				});
+
+			xAxis.setExtremes(newExt.x, newExt.x + newExt.width, false);
+			yAxis.setExtremes(newExt.y, newExt.y + newExt.height, false);
+
+			// Prevent zooming until this one is finished animating
+			delay = animation ? animation.duration || 500 : 0;
+			if (delay) {
+				chart.isMapZooming = true;
+				setTimeout(function () {
+					chart.isMapZooming = false;
+				}, delay);
+			}
+			
+
+			chart.redraw();
+		},
+
+		/**
+		 * Zoom the chart to view a specific area point
+		 */
+		zoomToShape: function (point) {
+			var series = point.series,
+				chart = series.chart;
+
+			series.xAxis.setExtremes(
+				point._minX,
+				point._maxX,
+				false
+			);
+			series.yAxis.setExtremes(
+				point._minY,
+				point._maxY,
+				false
+			);
+			chart.redraw();
+		}
+	});
+	
+	/**
+	 * Extend the default options with map options
+	 */
+	plotOptions.map = merge(plotOptions.scatter, {
+		animation: false, // makes the complex shapes slow
+		nullColor: '#F8F8F8',
+		borderColor: 'silver',
+		borderWidth: 1,
+		marker: null,
+		stickyTracking: false,
+		dataLabels: {
+			verticalAlign: 'middle'
+		},
+		turboThreshold: 0,
+		tooltip: {
+			followPointer: true,
+			pointFormat: '{point.name}: {point.y}<br/>'
+		},
+		states: {
+			normal: {
+				animation: true
+			}
+		}
+	});
+
+	var MapAreaPoint = extendClass(Point, {
+		/**
+		 * Extend the Point object to split paths
+		 */
+		applyOptions: function (options, x) {
+
+			var point = Point.prototype.applyOptions.call(this, options, x),
+				series = this.series,
+				seriesOptions = series.options,
+				joinBy = seriesOptions.dataJoinBy,
+				mapPoint;
+
+			if (joinBy && seriesOptions.mapData) {
+				mapPoint = series.getMapData(joinBy, point[joinBy]);
+					
+				if (mapPoint) {
+					// This applies only to bubbles
+					if (series.xyFromShape) {
+						point.x = mapPoint._midX;
+						point.y = mapPoint._midY;
+					}
+					extend(point, mapPoint); // copy over properties
+				} else {
+					point.y = point.y || null;
+				}
+			}
+			
+			return point;
+		},
+
+		/**
+		 * Set the visibility of a single map area
+		 */
+		setVisible: function (vis) {
+			var point = this,
+				method = vis ? 'show' : 'hide';
+
+			// Show and hide associated elements
+			each(['graphic', 'dataLabel'], function (key) {
+				if (point[key]) {
+					point[key][method]();
+				}
+			});
+		},
+
+		/**
+		 * Stop the fade-out 
+		 */
+		onMouseOver: function (e) {
+			clearTimeout(this.colorInterval);
+			Point.prototype.onMouseOver.call(this, e);
+		},
+		/**
+		 * Custom animation for tweening out the colors. Animation reduces blinking when hovering
+		 * over islands and coast lines. We run a custom implementation of animation becuase we
+		 * need to be able to run this independently from other animations like zoom redraw. Also,
+		 * adding color animation to the adapters would introduce almost the same amount of code.
+		 */
+		onMouseOut: function () {
+			var point = this,
+				start = +new Date(),
+				normalColor = Color(point.options.color),
+				hoverColor = Color(point.pointAttr.hover.fill),
+				animation = point.series.options.states.normal.animation,
+				duration = animation && (animation.duration || 500);
+
+			if (duration && normalColor.rgba.length === 4 && hoverColor.rgba.length === 4) {
+				delete point.pointAttr[''].fill; // avoid resetting it in Point.setState
+
+				clearTimeout(point.colorInterval);
+				point.colorInterval = setInterval(function () {
+					var pos = (new Date() - start) / duration,
+						graphic = point.graphic;
+					if (pos > 1) {
+						pos = 1;
+					}
+					if (graphic) {
+						graphic.attr('fill', tweenColors(hoverColor, normalColor, pos));
+					}
+					if (pos >= 1) {
+						clearTimeout(point.colorInterval);
+					}
+				}, 13);
+			}
+			Point.prototype.onMouseOut.call(point);
+		}
+	});
+
+	/**
+	 * Add the series type
+	 */
+	seriesTypes.map = extendClass(seriesTypes.scatter, {
+		type: 'map',
+		pointAttrToOptions: { // mapping between SVG attributes and the corresponding options
+			stroke: 'borderColor',
+			'stroke-width': 'borderWidth',
+			fill: 'color'
+		},
+		colorKey: 'y',
+		pointClass: MapAreaPoint,
+		trackerGroups: ['group', 'markerGroup', 'dataLabelsGroup'],
+		getSymbol: noop,
+		supportsDrilldown: true,
+		getExtremesFromAll: true,
+		useMapGeometry: true, // get axis extremes from paths, not values
+		init: function (chart) {
+			var series = this,
+				legendOptions = chart.options.legend,
+				valueDecimals = legendOptions.valueDecimals,
+				valueSuffix = legendOptions.valueSuffix || '',
+				legendItems = [],
+				name,
+				from,
+				to,
+				fromLabel,
+				toLabel,
+				colorRange,
+				valueRanges,
+				gradientColor,
+				grad,
+				tmpLabel,
+				horizontal = chart.options.legend.layout === 'horizontal';
+
+			
+			H.Series.prototype.init.apply(this, arguments);
+			colorRange = series.options.colorRange;
+			valueRanges = series.options.valueRanges;
+
+			if (valueRanges) {
+				each(valueRanges, function (range, i) {
+					var vis = true;
+					from = range.from;
+					to = range.to;
+					
+					// Assemble the default name. This can be overridden by legend.options.labelFormatter
+					name = '';
+					if (from === UNDEFINED) {
+						name = '< ';
+					} else if (to === UNDEFINED) {
+						name = '> ';
+					}
+					if (from !== UNDEFINED) {
+						name += numberFormat(from, valueDecimals) + valueSuffix;
+					}
+					if (from !== UNDEFINED && to !== UNDEFINED) {
+						name += ' - ';
+					}
+					if (to !== UNDEFINED) {
+						name += numberFormat(to, valueDecimals) + valueSuffix;
+					}
+					
+					// Add a mock object to the legend items
+					legendItems.push(H.extend({
+						chart: series.chart,
+						name: name,
+						options: {},
+						drawLegendSymbol: seriesTypes.area.prototype.drawLegendSymbol,
+						visible: true,
+						setState: noop,
+						setVisible: function () {
+							vis = this.visible = !vis;
+							each(series.points, function (point) {
+								if (point.valueRange === i) {
+									point.setVisible(vis);
+								}
+							});
+							
+							chart.legend.colorizeItem(this, vis);
+						}
+					}, range));
+				});
+				series.legendItems = legendItems;
+
+			} else if (colorRange) {
+
+				from = colorRange.from;
+				to = colorRange.to;
+				fromLabel = colorRange.fromLabel;
+				toLabel = colorRange.toLabel;
+
+				// Flips linearGradient variables and label text.
+				grad = horizontal ? [0, 0, 1, 0] : [0, 1, 0, 0]; 
+				if (!horizontal) {
+					tmpLabel = fromLabel;
+					fromLabel = toLabel;
+					toLabel = tmpLabel;
+				} 
+
+				// Creates color gradient.
+				gradientColor = {
+					linearGradient: { x1: grad[0], y1: grad[1], x2: grad[2], y2: grad[3] },
+					stops: 
+					[
+						[0, from],
+						[1, to]
+					]
+				};
+
+				// Add a mock object to the legend items.
+				legendItems = [{
+					chart: series.chart,
+					options: {},
+					fromLabel: fromLabel,
+					toLabel: toLabel,
+					color: gradientColor,
+					drawLegendSymbol: this.drawLegendSymbolGradient,
+					visible: true,
+					setState: noop,
+					setVisible: noop
+				}];
+
+				series.legendItems = legendItems;
+			}
+		},
+
+		/**
+		 * If neither valueRanges nor colorRanges are defined, use basic area symbol.
+		 */
+		drawLegendSymbol: seriesTypes.area.prototype.drawLegendSymbol,
+
+		/**
+		 * Gets the series' symbol in the legend and extended legend with more information.
+		 * 
+		 * @param {Object} legend The legend object
+		 * @param {Object} item The series (this) or point
+		 */
+		drawLegendSymbolGradient: function (legend, item) {
+			var spacing = legend.options.symbolPadding,
+				padding = pick(legend.options.padding, 8),
+				positionY,
+				positionX,
+				gradientSize = this.chart.renderer.fontMetrics(legend.options.itemStyle.fontSize).h,
+				horizontal = legend.options.layout === 'horizontal',
+				box1,
+				box2,
+				box3,
+				rectangleLength = pick(legend.options.rectangleLength, 200);
+
+			// Set local variables based on option.
+			if (horizontal) {
+				positionY = -(spacing / 2);
+				positionX = 0;
+			} else {
+				positionY = -rectangleLength + legend.baseline - (spacing / 2);
+				positionX = padding + gradientSize;
+			}
+
+			// Creates the from text.
+			item.fromText = this.chart.renderer.text(
+					item.fromLabel,	// Text.
+					positionX,		// Lower left x.
+					positionY		// Lower left y.
+				).attr({
+					zIndex: 2
+				}).add(item.legendGroup);
+			box1 = item.fromText.getBBox();
+
+			// Creates legend symbol.
+			// Ternary changes variables based on option.
+			item.legendSymbol = this.chart.renderer.rect(
+				horizontal ? box1.x + box1.width + spacing : box1.x - gradientSize - spacing,		// Upper left x.
+				box1.y,																				// Upper left y.
+				horizontal ? rectangleLength : gradientSize,											// Width.
+				horizontal ? gradientSize : rectangleLength,										// Height.
+				2																					// Corner radius.
+			).attr({
+				zIndex: 1
+			}).add(item.legendGroup);
+			box2 = item.legendSymbol.getBBox();
+
+			// Creates the to text.
+			// Vertical coordinate changed based on option.
+			item.toText = this.chart.renderer.text(
+					item.toLabel,
+					box2.x + box2.width + spacing,
+					horizontal ? positionY : box2.y + box2.height - spacing
+				).attr({
+					zIndex: 2
+				}).add(item.legendGroup);
+			box3 = item.toText.getBBox();
+
+			// Changes legend box settings based on option.
+			if (horizontal) {
+				legend.offsetWidth = box1.width + box2.width + box3.width + (spacing * 2) + padding;
+				legend.itemY = gradientSize + padding;
+			} else {
+				legend.offsetWidth = Math.max(box1.width, box3.width) + (spacing) + box2.width + padding;
+				legend.itemY = box2.height + padding;
+				legend.itemX = spacing;
+			}
+		},
+
+		/**
+		 * Get the bounding box of all paths in the map combined.
+		 */
+		getBox: function (paths) {
+			var maxX = Number.MIN_VALUE, 
+				minX =  Number.MAX_VALUE, 
+				maxY = Number.MIN_VALUE, 
+				minY =  Number.MAX_VALUE,
+				hasBox;
+			
+			// Find the bounding box
+			each(paths || [], function (point) {
+
+				if (point.path) {
+					if (typeof point.path === 'string') {
+						point.path = H.splitPath(point.path);
+					}
+
+					var path = point.path || [],
+						i = path.length,
+						even = false, // while loop reads from the end
+						pointMaxX = Number.MIN_VALUE, 
+						pointMinX =  Number.MAX_VALUE, 
+						pointMaxY = Number.MIN_VALUE, 
+						pointMinY =  Number.MAX_VALUE;
+
+					// The first time a map point is used, analyze its box
+					if (!point._foundBox) {
+						while (i--) {
+							if (typeof path[i] === 'number' && !isNaN(path[i])) {
+								if (even) { // even = x
+									pointMaxX = Math.max(pointMaxX, path[i]);
+									pointMinX = Math.min(pointMinX, path[i]);
+								} else { // odd = Y
+									pointMaxY = Math.max(pointMaxY, path[i]);
+									pointMinY = Math.min(pointMinY, path[i]);
+								}
+								even = !even;
+							}
+						}
+						// Cache point bounding box for use to position data labels, bubbles etc
+						point._midX = pointMinX + (pointMaxX - pointMinX) * pick(point.middleX, 0.5);
+						point._midY = pointMinY + (pointMaxY - pointMinY) * pick(point.middleY, 0.5);
+						point._maxX = pointMaxX;
+						point._minX = pointMinX;
+						point._maxY = pointMaxY;
+						point._minY = pointMinY;
+						point._foundBox = true;
+					}
+
+					maxX = Math.max(maxX, point._maxX);
+					minX = Math.min(minX, point._minX);
+					maxY = Math.max(maxY, point._maxY);
+					minY = Math.min(minY, point._minY);
+
+					hasBox = true;
+				}
+			});
+
+			// Set the box for the whole series
+			if (hasBox) {
+				this.minY = Math.min(minY, pick(this.minY, Number.MAX_VALUE));
+				this.maxY = Math.max(maxY, pick(this.maxY, Number.MIN_VALUE));
+				this.minX = Math.min(minX, pick(this.minX, Number.MAX_VALUE));
+				this.maxX = Math.max(maxX, pick(this.maxX, Number.MIN_VALUE));
+			}
+		},
+		
+		getExtremes: function () {
+			this.dataMin = this.minY;
+			this.dataMax = this.maxY;
+		},
+		
+		/**
+		 * Translate the path so that it automatically fits into the plot area box
+		 * @param {Object} path
+		 */
+		translatePath: function (path) {
+			
+			var series = this,
+				even = false, // while loop reads from the end
+				xAxis = series.xAxis,
+				yAxis = series.yAxis,
+				i;
+
+			// Preserve the original
+			path = [].concat(path);
+				
+			// Do the translation
+			i = path.length;
+			while (i--) {
+				if (typeof path[i] === 'number') {
+					if (even) { // even = x
+						path[i] = xAxis.translate(path[i]);
+					} else { // odd = Y
+						path[i] = yAxis.len - yAxis.translate(path[i]);
+					}
+					even = !even;
+				}
+			}
+
+
+			return path;
+		},
+		
+		/**
+		 * Extend setData to join in mapData. If the allAreas option is true, all areas 
+		 * from the mapData are used, and those that don't correspond to a data value
+		 * are given null values.
+		 */
+		setData: function (data, redraw) {
+			var options = this.options,
+				mapData = options.mapData,
+				joinBy = options.dataJoinBy,
+				dataUsed = [];
+			
+
+			this.getBox(data);
+			this.getBox(mapData);
+			if (options.allAreas && mapData) {
+
+				data = data || [];
+
+				// Registered the point codes that actually hold data
+				if (joinBy) {
+					each(data, function (point) {
+						dataUsed.push(point[joinBy]);
+					});
+				}
+
+				// Add those map points that don't correspond to data, which will be drawn as null points
+				each(mapData, function (mapPoint) {
+					if (!joinBy || inArray(mapPoint[joinBy], dataUsed) === -1) {
+						data.push(merge(mapPoint, { y: null }));
+					}
+				});
+			}
+			H.Series.prototype.setData.call(this, data, redraw);
+		},
+
+		/**
+		 * For each point, get the corresponding map data
+		 */
+		getMapData: function (key, value) {
+			var options = this.options,
+				mapData = options.mapData,
+				mapMap = this.mapMap,
+				i = mapData.length;
+
+			// Create a cache for quicker lookup second time
+			if (!mapMap) {
+				mapMap = this.mapMap = [];
+			}
+			if (mapMap[value] !== undefined) {
+				return mapData[mapMap[value]];
+
+			} else if (value !== undefined) {
+				while (i--) {
+					if (mapData[i][key] === value) {
+						mapMap[value] = i; // cache it
+						return mapData[i];
+					}
+				}
+			}
+		},
+		
+		/**
+		 * Add the path option for data points. Find the max value for color calculation.
+		 */
+		translate: function () {
+			var series = this,
+				dataMin = Number.MAX_VALUE,
+				dataMax = Number.MIN_VALUE;
+	
+			series.generatePoints();
+	
+			each(series.data, function (point) {
+				
+				point.shapeType = 'path';
+				point.shapeArgs = {
+					d: series.translatePath(point.path)
+				};
+				
+				// TODO: do point colors in drawPoints instead of point.init
+				if (typeof point.y === 'number') {
+					if (point.y > dataMax) {
+						dataMax = point.y;
+					} else if (point.y < dataMin) {
+						dataMin = point.y;
+					}
+				}
+			});
+			
+			series.translateColors(dataMin, dataMax);
+		},
+		
+		/**
+		 * In choropleth maps, the color is a result of the value, so this needs translation too
+		 */
+		translateColors: function (dataMin, dataMax) {
+			
+			var seriesOptions = this.options,
+				valueRanges = seriesOptions.valueRanges,
+				colorRange = seriesOptions.colorRange,
+				colorKey = this.colorKey,
+				nullColor = seriesOptions.nullColor,
+				from,
+				to;
+
+			if (colorRange) {
+				from = Color(colorRange.from);
+				to = Color(colorRange.to);
+			}
+			each(this.data, function (point) {
+				var value = point[colorKey],
+					isNull = value === null,
+					range,
+					color,
+					i,
+					pos;
+
+				if (valueRanges) {
+					i = valueRanges.length;
+					if (isNull) {
+						color = nullColor;
+					} else {
+						while (i--) {
+							range = valueRanges[i];
+							from = range.from;
+							to = range.to;
+							if ((from === UNDEFINED || value >= from) && (to === UNDEFINED || value <= to)) {
+								color = range.color;
+								break;
+							}	
+						}
+						point.valueRange = i;
+					}
+				} else if (colorRange && !isNull) {
+
+					pos = 1 - ((dataMax - value) / (dataMax - dataMin));
+					color = tweenColors(from, to, pos);
+				} else if (isNull) {
+					color = nullColor;
+				} 
+
+				if (color) {
+					point.color = null; // reset from previous drilldowns, use of the same data options
+					point.options.color = color;
+				}
+			});
+		},
+		
+		drawGraph: noop,
+		
+		/**
+		 * We need the points' bounding boxes in order to draw the data labels, so 
+		 * we skip it now and call it from drawPoints instead.
+		 */
+		drawDataLabels: noop,
+		
+		/** 
+		 * Use the drawPoints method of column, that is able to handle simple shapeArgs.
+		 * Extend it by assigning the tooltip position.
+		 */
+		drawPoints: function () {
+			var series = this,
+				xAxis = series.xAxis,
+				yAxis = series.yAxis,
+				colorKey = series.colorKey;
+			
+			// Make points pass test in drawing
+			each(series.data, function (point) {
+				point.plotY = 1; // pass null test in column.drawPoints
+				if (point[colorKey] === null) {
+					point[colorKey] = 0;
+					point.isNull = true;
+				}
+			});
+			
+			// Draw them
+			seriesTypes.column.prototype.drawPoints.apply(series);
+			
+			each(series.data, function (point) {
+
+				// Record the middle point (loosely based on centroid), determined
+				// by the middleX and middleY options.
+				point.plotX = xAxis.toPixels(point._midX, true);
+				point.plotY = yAxis.toPixels(point._midY, true);
+				
+				// Reset escaped null points
+				if (point.isNull) {
+					point[colorKey] = null;
+				}
+			});
+
+			// Now draw the data labels
+			H.Series.prototype.drawDataLabels.call(series);
+			
+		},
+
+		/**
+		 * Animate in the new series from the clicked point in the old series.
+		 * Depends on the drilldown.js module
+		 */
+		animateDrilldown: function (init) {
+			var toBox = this.chart.plotBox,
+				level = this.chart.drilldownLevels[this.chart.drilldownLevels.length - 1],
+				fromBox = level.bBox,
+				animationOptions = this.chart.options.drilldown.animation,
+				scale;
+				
+			if (!init) {
+
+				scale = Math.min(fromBox.width / toBox.width, fromBox.height / toBox.height);
+				level.shapeArgs = {
+					scaleX: scale,
+					scaleY: scale,
+					translateX: fromBox.x,
+					translateY: fromBox.y
+				};
+				
+				// TODO: Animate this.group instead
+				each(this.points, function (point) {
+
+					point.graphic
+						.attr(level.shapeArgs)
+						.animate({
+							scaleX: 1,
+							scaleY: 1,
+							translateX: 0,
+							translateY: 0
+						}, animationOptions);
+
+				});
+
+				delete this.animate;
+			}
+			
+		},
+
+		/**
+		 * When drilling up, pull out the individual point graphics from the lower series
+		 * and animate them into the origin point in the upper series.
+		 */
+		animateDrillupFrom: function (level) {
+			seriesTypes.column.prototype.animateDrillupFrom.call(this, level);
+		},
+
+
+		/**
+		 * When drilling up, keep the upper series invisible until the lower series has
+		 * moved into place
+		 */
+		animateDrillupTo: function (init) {
+			seriesTypes.column.prototype.animateDrillupTo.call(this, init);
+		}
+	});
+
+
+	// The mapline series type
+	plotOptions.mapline = merge(plotOptions.map, {
+		lineWidth: 1,
+		backgroundColor: 'none'
+	});
+	seriesTypes.mapline = extendClass(seriesTypes.map, {
+		type: 'mapline',
+		pointAttrToOptions: { // mapping between SVG attributes and the corresponding options
+			stroke: 'color',
+			'stroke-width': 'lineWidth',
+			fill: 'backgroundColor'
+		},
+		drawLegendSymbol: seriesTypes.line.prototype.drawLegendSymbol
+	});
+
+	// The mappoint series type
+	plotOptions.mappoint = merge(plotOptions.scatter, {
+		dataLabels: {
+			enabled: true,
+			format: '{point.name}',
+			color: 'black',
+			style: {
+				textShadow: '0 0 5px white'
+			}
+		}
+	});
+	seriesTypes.mappoint = extendClass(seriesTypes.scatter, {
+		type: 'mappoint'
+	});
+
+	// The mapbubble series type
+	if (seriesTypes.bubble) {
+
+		plotOptions.mapbubble = merge(plotOptions.bubble, {
+			tooltip: {
+				pointFormat: '{point.name}: {point.z}'
+			}
+		});
+		seriesTypes.mapbubble = extendClass(seriesTypes.bubble, {
+			pointClass: extendClass(Point, {
+				applyOptions: MapAreaPoint.prototype.applyOptions
+			}),
+			xyFromShape: true,
+			type: 'mapbubble',
+			pointArrayMap: ['z'], // If one single value is passed, it is interpreted as z
+			/**
+			 * Return the map area identified by the dataJoinBy option
+			 */
+			getMapData: seriesTypes.map.prototype.getMapData,
+			getBox: seriesTypes.map.prototype.getBox,
+			setData: seriesTypes.map.prototype.setData
+		});
+	}
+
+	// Create symbols for the zoom buttons
+	function selectiveRoundedRect(attr, x, y, w, h, rTopLeft, rTopRight, rBottomRight, rBottomLeft) {
+		var normalize = (attr['stroke-width'] % 2 / 2);
+			
+		x -= normalize;
+		y -= normalize;
+
+		return ['M', x + rTopLeft, y,
+            // top side
+            'L', x + w - rTopRight, y,
+            // top right corner
+            'C', x + w - rTopRight / 2, y, x + w, y + rTopRight / 2, x + w, y + rTopRight,
+            // right side
+            'L', x + w, y + h - rBottomRight,
+            // bottom right corner
+            'C', x + w, y + h - rBottomRight / 2, x + w - rBottomRight / 2, y + h, x + w - rBottomRight, y + h,
+            // bottom side
+            'L', x + rBottomLeft, y + h,
+            // bottom left corner
+            'C', x + rBottomLeft / 2, y + h, x, y + h - rBottomLeft / 2, x, y + h - rBottomLeft,
+            // left side
+            'L', x, y + rTopLeft,
+            // top left corner
+            'C', x, y + rTopLeft / 2, x + rTopLeft / 2, y, x + rTopLeft, y,
+            'Z'
+        ];
+	}
+	symbols.topbutton = function (x, y, w, h, attr) {
+		return selectiveRoundedRect(attr, x, y, w, h, attr.r, attr.r, 0, 0);
+	};
+	symbols.bottombutton = function (x, y, w, h, attr) {
+		return selectiveRoundedRect(attr, x, y, w, h, 0, 0, attr.r, attr.r);
+	};
+	// The symbol callbacks are generated on the SVGRenderer object in all browsers. Even
+	// VML browsers need this in order to generate shapes in export. Now share
+	// them with the VMLRenderer.
+	if (H.Renderer === VMLRenderer) {
+		each(['topbutton', 'bottombutton'], function (shape) {
+			VMLRenderer.prototype.symbols[shape] = symbols[shape];
+		});
+	}
+
+	
+	/**
+	 * A wrapper for Chart with all the default values for a Map
+	 */
+	H.Map = function (options, callback) {
+		
+		var hiddenAxis = {
+				endOnTick: false,
+				gridLineWidth: 0,
+				labels: {
+					enabled: false
+				},
+				lineWidth: 0,
+				minPadding: 0,
+				maxPadding: 0,
+				startOnTick: false,
+				tickWidth: 0,
+				title: null
+			},
+			seriesOptions;
+		
+		// Don't merge the data
+		seriesOptions = options.series;
+		options.series = null;
+		
+		options = merge({
+			chart: {
+				panning: 'xy'
+			},
+			xAxis: hiddenAxis,
+			yAxis: merge(hiddenAxis, { reversed: true })	
+		},
+		options, // user's options
+	
+		{ // forced options
+			chart: {
+				type: 'map',
+				inverted: false
+			}
+		});
+	
+		options.series = seriesOptions;
+	
+	
+		return new Chart(options, callback);
+	};
+}(Highcharts));
