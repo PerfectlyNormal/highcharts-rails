@@ -3,6 +3,8 @@
 This gem just includes [Highcharts](http://highcharts.com/) as an asset in the Rails 3.1 (or newer) asset pipeline.
 Highcharts is not free for commercial use, so make sure you have a [valid license](http://highcharts.com/license) to use Highcharts.
 
+If you are looking to include Highstock, Justin Kuepper has made [highstock-rails](https://github.com/justinkuepper/highstock-rails), so check it out.
+
 ## Installation
 
 Add the gem to the Gemfile
