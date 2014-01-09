@@ -1,8 +1,7 @@
 /**
  * @license Data plugin for Highcharts
  *
- * (c) 2012-2013 Torstein Hønsi
- * Last revision 2013-06-07
+ * (c) 2012-2014 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
@@ -50,7 +49,8 @@
  * https://spreadsheets.google.com/feeds/worksheets/{key}/public/basic
  *
  * - itemDelimiter : String
- * Item or cell delimiter for parsing CSV. Defaults to ",".
+ * Item or cell delimiter for parsing CSV. Defaults to the tab character "\t" if a tab character
+ * is found in the CSV string, if not it defaults to ",".
  *
  * - lineDelimiter : String
  * Line delimiter for parsing CSV. Defaults to "\n".
@@ -172,6 +172,7 @@
 			endRow = options.endRow || Number.MAX_VALUE,
 			startColumn = options.startColumn || 0,
 			endColumn = options.endColumn || Number.MAX_VALUE,
+			itemDelimiter,
 			lines,
 			activeRowNo = 0;
 			
@@ -181,6 +182,8 @@
 				.replace(/\r\n/g, "\n") // Unix
 				.replace(/\r/g, "\n") // Mac
 				.split(options.lineDelimiter || "\n");
+
+			itemDelimiter = options.itemDelimiter || (csv.indexOf('\t') !== -1 ? '\t' : ',');
 			
 			each(lines, function (line, rowNo) {
 				var trimmed = self.trim(line),
@@ -189,7 +192,7 @@
 					items;
 				
 				if (rowNo >= startRow && rowNo <= endRow && !isComment && !isBlank) {
-					items = line.split(options.itemDelimiter || ',');
+					items = line.split(itemDelimiter);
 					each(items, function (item, colNo) {
 						if (colNo >= startColumn && colNo <= endColumn) {
 							if (!columns[colNo - startColumn]) {

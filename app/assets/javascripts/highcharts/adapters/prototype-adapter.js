@@ -1,8 +1,8 @@
 /**
- * @license Highcharts JS v3.0.7 (2013-10-24)
+ * @license Highcharts JS v3.0.8 (2014-01-09)
  * Prototype adapter
  *
- * @author Michael Nelson, Torstein Hønsi.
+ * @author Michael Nelson, Torstein Honsi.
  *
  * Feel free to use and modify this script.
  * Highcharts license: www.highcharts.com/license.

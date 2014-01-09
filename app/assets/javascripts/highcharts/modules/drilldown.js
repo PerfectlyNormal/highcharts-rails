@@ -2,7 +2,6 @@
  * Highcharts Drilldown plugin
  * 
  * Author: Torstein Honsi
- * Last revision: 2013-02-18
  * License: MIT License
  *
  * Demo: http://jsfiddle.net/highcharts/Vf3yT/
@@ -43,13 +42,13 @@
 	defaultOptions.drilldown = {
 		activeAxisLabelStyle: {
 			cursor: 'pointer',
-			color: '#039',
+			color: '#0d233a',
 			fontWeight: 'bold',
 			textDecoration: 'underline'			
 		},
 		activeDataLabelStyle: {
 			cursor: 'pointer',
-			color: '#039',
+			color: '#0d233a',
 			fontWeight: 'bold',
 			textDecoration: 'underline'			
 		},
@@ -70,7 +69,7 @@
 	/**
 	 * A general fadeIn method
 	 */
-	H.SVGRenderer.prototype.Element.prototype.fadeIn = function () {
+	H.SVGRenderer.prototype.Element.prototype.fadeIn = function (animation) {
 		this
 		.attr({
 			opacity: 0.1,
@@ -78,7 +77,7 @@
 		})
 		.animate({
 			opacity: 1
-		}, {
+		}, animation || {
 			duration: 250
 		});
 	};
@@ -301,6 +300,9 @@
 				point.graphic
 					.attr(animateFrom)
 					.animate(point.shapeArgs, animationOptions);
+				if (point.dataLabel) {
+					point.dataLabel.fadeIn(animationOptions);
+				}
 			});
 		}
 		
