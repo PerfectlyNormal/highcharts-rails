@@ -2,7 +2,7 @@
 // @compilation_level SIMPLE_OPTIMIZATIONS
 
 /**
- * @license Highcharts JS v3.0.8 (2014-01-09)
+ * @license Highcharts JS v3.0.9 (2014-01-15)
  *
  * (c) 2009-2014 Torstein Honsi
  *
@@ -55,7 +55,7 @@ var UNDEFINED,
 	noop = function () {},
 	charts = [],
 	PRODUCT = 'Highcharts',
-	VERSION = '3.0.8',
+	VERSION = '3.0.9',
 
 	// some constants for frequently used strings
 	DIV = 'div',
@@ -1303,8 +1303,7 @@ defaultLabelOptions = {
 	style: {
 		color: '#666',
 		cursor: 'default',
-		fontSize: '11px',
-		lineHeight: '14px'
+		fontSize: '11px'
 	}
 };
 
@@ -1326,9 +1325,9 @@ defaultOptions = {
 	},
 	global: {
 		useUTC: true,
-		//timezoneOffset: 0, // docs: highcharts/global/timezoneoffset
-		canvasToolsURL: 'http://code.highcharts.com/3.0.8/modules/canvas-tools.js',
-		VMLRadialGradientURL: 'http://code.highcharts.com/3.0.8/gfx/vml-radial-gradient.png'
+		//timezoneOffset: 0,
+		canvasToolsURL: 'http://code.highcharts.com/3.0.9/modules/canvas-tools.js',
+		VMLRadialGradientURL: 'http://code.highcharts.com/3.0.9/gfx/vml-radial-gradient.png'
 	},
 	chart: {
 		//animation: true,
@@ -2489,8 +2488,8 @@ SVGElement.prototype = {
 				width = bBox.width;
 				height = bBox.height;
 
-				// Workaround for wrong bounding box in IE9 and IE10 (#1101, #1505, #1669)
-				if (isIE && styles && styles.fontSize === '11px' && height.toPrecision(3) === '22.7') {
+				// Workaround for wrong bounding box in IE9 and IE10 (#1101, #1505, #1669, #2568)
+				if (isIE && styles && styles.fontSize === '11px' && height.toPrecision(3) === '16.9') {
 					bBox.height = height = 14;
 				}
 
@@ -2894,7 +2893,16 @@ SVGRenderer.prototype = {
 			textStyles = wrapper.styles,
 			width = wrapper.textWidth,
 			textLineHeight = textStyles && textStyles.lineHeight,
-			i = childNodes.length;
+			i = childNodes.length,
+			getLineHeight = function (tspan) {
+				return textLineHeight ? 
+					pInt(textLineHeight) :
+					renderer.fontMetrics(
+						/px$/.test(tspan && tspan.style.fontSize) ?
+							tspan.style.fontSize :
+							(textStyles.fontSize || 11)
+					).h;
+			};
 
 		/// remove old text
 		while (i--) {
@@ -2963,11 +2971,7 @@ SVGRenderer.prototype = {
 							attr(
 								tspan,
 								'dy',
-								textLineHeight || renderer.fontMetrics(
-									/px$/.test(tspan.style.fontSize) ?
-										tspan.style.fontSize :
-										textStyles.fontSize
-								).h,
+								getLineHeight(tspan),
 								// Safari 6.0.2 - too optimized for its own good (#1539)
 								// TODO: revisit this with future versions of Safari
 								isWebKit && tspan.offsetHeight
@@ -2982,12 +2986,12 @@ SVGRenderer.prototype = {
 						// check width and apply soft breaks
 						if (width) {
 							var words = span.replace(/([^\^])-/g, '$1- ').split(' '), // #1273
-								hasWhiteSpace = words.length > 1 && textStyles.whiteSpace !== 'nowrap', // docs: nowrap
+								hasWhiteSpace = words.length > 1 && textStyles.whiteSpace !== 'nowrap',
 								tooLong,
 								actualWidth,
 								clipHeight = wrapper._clipHeight,
 								rest = [],
-								dy = pInt(textLineHeight || 16),
+								dy = getLineHeight(),
 								softLineNo = 1,
 								bBox;
 
@@ -5788,7 +5792,6 @@ Tick.prototype = {
 			labelEdge = axis.labelEdge,
 			justifyLabel = axis.justifyLabels && (isFirst || isLast);
 
-		// docs: auto step pulls out overlapping labels
 		// Hide it if it now overlaps the neighbour label
 		if (labelEdge[line] === UNDEFINED || pxPos + leftSide > labelEdge[line]) {
 			labelEdge[line] = pxPos + rightSide;
@@ -9265,7 +9268,7 @@ Pointer.prototype = {
 
 		// Draw independent crosshairs
 		each(chart.axes, function (axis) {
-			axis.drawCrosshair(e, pick(hoverPoint, point));
+			axis.drawCrosshair(e, pick(point, hoverPoint));
 		});
 	},
 
@@ -9770,7 +9773,7 @@ Pointer.prototype = {
 	onTrackerMouseOut: function (e) {
 		var series = this.chart.hoverSeries,
 			relatedTarget = e.relatedTarget || e.toElement,
-			relatedSeries = relatedTarget.point && relatedTarget.point.series; // #2499
+			relatedSeries = relatedTarget && relatedTarget.point && relatedTarget.point.series; // #2499
 		
 		if (series && !series.options.stickyTracking && !this.inClass(relatedTarget, PREFIX + 'tooltip') &&
 				relatedSeries !== series) {
@@ -10840,14 +10843,14 @@ var LegendSymbolMixin = Highcharts.LegendSymbolMixin = {
 	 * @param {Object} item The series (this) or point
 	 */
 	drawRectangle: function (legend, item) {
-		var symbolHeight = legend.options.symbolHeight || 12; // docs
+		var symbolHeight = legend.options.symbolHeight || 12;
 		
 		item.legendSymbol = this.chart.renderer.rect(
 			0,
 			legend.baseline - 5 - (symbolHeight / 2),
 			legend.symbolWidth,
 			symbolHeight,
-			pick(legend.options.symbolRadius, 2) // docs
+			pick(legend.options.symbolRadius, 2)
 		).attr({
 			zIndex: 3
 		}).add(item.legendGroup);		
@@ -13611,10 +13614,10 @@ Series.prototype = {
 
 				// Percent stacked areas
 				} else {
-					stack.total += mathAbs(y) || 0;
+					stack.total = correctFloat(stack.total + (mathAbs(y) || 0));
 				}
 			} else {
-				stack.total += y || 0;
+				stack.total = correctFloat(stack.total + (y || 0));
 			}
 
 			stack.cum = (stack.cum || 0) + (y || 0);
@@ -13889,7 +13892,7 @@ Series.prototype = {
 		var series = this,
 			tooltipOptions = series.tooltipOptions,
 			dateTimeLabelFormats = tooltipOptions.dateTimeLabelFormats,
-			xDateFormat = tooltipOptions.xDateFormat || dateTimeLabelFormats.year, // #2546
+			xDateFormat = tooltipOptions.xDateFormat,
 			xAxis = series.xAxis,
 			isDateTime = xAxis && xAxis.options.type === 'datetime',
 			headerFormat = tooltipOptions.headerFormat,
@@ -13908,6 +13911,9 @@ Series.prototype = {
 			} else {
 				xDateFormat = dateTimeLabelFormats.day;
 			}
+
+			xDateFormat = xDateFormat || dateTimeLabelFormats.year; // #2546, 2581
+
 		}
 
 		// Insert the header date format if any
@@ -14082,7 +14088,6 @@ Series.prototype = {
 			graphic,
 			options = series.options,
 			seriesMarkerOptions = options.marker,
-			seriesPointAttr = series.pointAttr[''],
 			pointMarkerOptions,
 			enabled,
 			isInside,
@@ -14104,7 +14109,7 @@ Series.prototype = {
 				if (enabled && plotY !== UNDEFINED && !isNaN(plotY) && point.y !== null) {
 
 					// shortcuts
-					pointAttr = point.pointAttr[point.selected ? SELECT_STATE : NORMAL_STATE] || seriesPointAttr;
+					pointAttr = point.pointAttr[point.selected ? SELECT_STATE : NORMAL_STATE];
 					radius = pointAttr.r;
 					symbol = pick(pointMarkerOptions.symbol, series.symbol);
 					isImage = symbol.indexOf('url') === 0;
@@ -14192,9 +14197,10 @@ Series.prototype = {
 			pointAttr,
 			pointAttrToOptions = series.pointAttrToOptions,
 			hasPointSpecificOptions,
-			turboThreshold = seriesOptions.turboThreshold,
 			negativeColor = seriesOptions.negativeColor,
 			defaultLineColor = normalOptions.lineColor,
+			defaultFillColor = normalOptions.fillColor,
+			attr,
 			key;
 
 		// series type specific modifications
@@ -14229,78 +14235,79 @@ Series.prototype = {
 		// options are given. If not, create a referance to the series wide point
 		// attributes
 		i = points.length;
-		if (!turboThreshold || i < turboThreshold) {
-			while (i--) {
-				point = points[i];
-				normalOptions = (point.options && point.options.marker) || point.options;
-				if (normalOptions && normalOptions.enabled === false) {
-					normalOptions.radius = 0;
-				}
-
-				if (point.negative && negativeColor) {
-					point.color = point.fillColor = negativeColor;
-				}
-
-				hasPointSpecificOptions = seriesOptions.colorByPoint || point.color; // #868
-
-				// check if the point has specific visual options
-				if (point.options) {
-					for (key in pointAttrToOptions) {
-						if (defined(normalOptions[pointAttrToOptions[key]])) {
-							hasPointSpecificOptions = true;
-						}
-					}
-				}
-
-				// a specific marker config object is defined for the individual point:
-				// create it's own attribute collection
-				if (hasPointSpecificOptions) {
-					normalOptions = normalOptions || {};
-					pointAttr = [];
-					stateOptions = normalOptions.states || {}; // reassign for individual point
-					pointStateOptionsHover = stateOptions[HOVER_STATE] = stateOptions[HOVER_STATE] || {};
-
-					// Handle colors for column and pies
-					if (!seriesOptions.marker) { // column, bar, point
-						// if no hover color is given, brighten the normal color
-						pointStateOptionsHover.color = pointStateOptionsHover.color || stateOptionsHover.color ||
-							Color(point.color)
-								.brighten(pointStateOptionsHover.brightness || stateOptionsHover.brightness)
-								.get();
-
-					}
-
-					// normal point state inherits series wide normal state
-					pointAttr[NORMAL_STATE] = series.convertAttribs(extend({
-						color: point.color, // #868
-						fillColor: point.color, // Individual point color or negative color markers (#2219)
-						lineColor: defaultLineColor === null ? point.color : UNDEFINED // Bubbles take point color, line markers use white
-					}, normalOptions), seriesPointAttr[NORMAL_STATE]);
-
-					// inherit from point normal and series hover
-					pointAttr[HOVER_STATE] = series.convertAttribs(
-						stateOptions[HOVER_STATE],
-						seriesPointAttr[HOVER_STATE],
-						pointAttr[NORMAL_STATE]
-					);
-
-					// inherit from point normal and series hover
-					pointAttr[SELECT_STATE] = series.convertAttribs(
-						stateOptions[SELECT_STATE],
-						seriesPointAttr[SELECT_STATE],
-						pointAttr[NORMAL_STATE]
-					);
-
-
-				// no marker config object is created: copy a reference to the series-wide
-				// attribute collection
-				} else {
-					pointAttr = seriesPointAttr;
-				}
-
-				point.pointAttr = pointAttr;
-
+		while (i--) {
+			point = points[i];
+			normalOptions = (point.options && point.options.marker) || point.options;
+			if (normalOptions && normalOptions.enabled === false) {
+				normalOptions.radius = 0;
 			}
+
+			if (point.negative && negativeColor) {
+				point.color = point.fillColor = negativeColor;
+			}
+
+			hasPointSpecificOptions = seriesOptions.colorByPoint || point.color; // #868
+
+			// check if the point has specific visual options
+			if (point.options) {
+				for (key in pointAttrToOptions) {
+					if (defined(normalOptions[pointAttrToOptions[key]])) {
+						hasPointSpecificOptions = true;
+					}
+				}
+			}
+
+			// a specific marker config object is defined for the individual point:
+			// create it's own attribute collection
+			if (hasPointSpecificOptions) {
+				normalOptions = normalOptions || {};
+				pointAttr = [];
+				stateOptions = normalOptions.states || {}; // reassign for individual point
+				pointStateOptionsHover = stateOptions[HOVER_STATE] = stateOptions[HOVER_STATE] || {};
+
+				// Handle colors for column and pies
+				if (!seriesOptions.marker) { // column, bar, point
+					// if no hover color is given, brighten the normal color
+					pointStateOptionsHover.color =
+						Color(pointStateOptionsHover.color || point.color)
+							.brighten(pointStateOptionsHover.brightness ||
+							stateOptionsHover.brightness).get();
+
+				}
+
+				// normal point state inherits series wide normal state
+				attr = { color: point.color }; // #868
+				if (!defaultFillColor) { // Individual point color or negative color markers (#2219)
+					attr.fillColor = point.color;
+				}
+				if (!defaultLineColor) {
+					attr.lineColor = point.color; // Bubbles take point color, line markers use white
+				}
+				pointAttr[NORMAL_STATE] = series.convertAttribs(extend(attr, normalOptions), seriesPointAttr[NORMAL_STATE]);
+
+				// inherit from point normal and series hover
+				pointAttr[HOVER_STATE] = series.convertAttribs(
+					stateOptions[HOVER_STATE],
+					seriesPointAttr[HOVER_STATE],
+					pointAttr[NORMAL_STATE]
+				);
+
+				// inherit from point normal and series hover
+				pointAttr[SELECT_STATE] = series.convertAttribs(
+					stateOptions[SELECT_STATE],
+					seriesPointAttr[SELECT_STATE],
+					pointAttr[NORMAL_STATE]
+				);
+
+
+			// no marker config object is created: copy a reference to the series-wide
+			// attribute collection
+			} else {
+				pointAttr = seriesPointAttr;
+			}
+
+			point.pointAttr = pointAttr;
+
 		}
 	},
 
@@ -15230,7 +15237,7 @@ extend(Series.prototype, {
 			}
 		}
 
-		series.updateParallelArrays(point, 'splice', i); // insert undefined item
+		series.updateParallelArrays(point, 'splice', i, 0, 0); // insert undefined item
 		series.updateParallelArrays(point, i); // update it
 
 		if (names) {

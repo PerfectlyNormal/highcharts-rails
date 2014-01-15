@@ -2,7 +2,7 @@
 // @compilation_level SIMPLE_OPTIMIZATIONS
 
 /**
- * @license Highcharts JS v3.0.8 (2014-01-09)
+ * @license Highcharts JS v3.0.9 (2014-01-15)
  *
  * (c) 2009-2014 Torstein Honsi
  *
@@ -274,6 +274,10 @@ var radialAxisMixin = {
 			if (this.isXAxis) {
 				this.minPixelPadding = this.transA * this.minPointOffset +
 					(this.reversed ? (this.endAngleRad - this.startAngleRad) / 4 : 0); // ???
+			} else {
+				// This is a workaround for regression #2593, but categories still don't position correctly.
+				// TODO: Implement true handling of Y axis categories on gauges.
+				this.minPixelPadding = 0; 
 			}
 		}
 	},
@@ -578,8 +582,7 @@ wrap(tickProto, 'getLabelPosition', function (proceed, x, y, label, horiz, label
 		
 		// Vertically centered
 		} else if (optionsY === null) {
-			optionsY = pInt(label.styles.lineHeight) * 0.9 - label.getBBox().height / 2;
-		
+			optionsY = axis.chart.renderer.fontMetrics(label.styles.fontSize).b - label.getBBox().height / 2;
 		}
 		
 		// Automatic alignment
