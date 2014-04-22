@@ -1,3 +1,8 @@
+# 4.0.0 / 2014-04-22
+
+* Updated Highcharts to 4.0.0
+  * See [the release announcement](http://www.highcharts.com/component/content/article/2-news/134-announcing-highcharts-4/)
+
 # 3.0.10 / 2014-03-11
 
 * Updated Highcharts to 3.0.10
