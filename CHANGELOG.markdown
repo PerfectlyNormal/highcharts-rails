@@ -1,3 +1,14 @@
+# 4.0.1 / 2014-04-24
+
+* Updated Highcharts to 4.0.1
+  * Fixed #2945, a regression causing pie data label formatter to be ignored unless the format option is set to null.
+  * Fixed #2941 causing columns to be Z-sorted in the wrong direction.
+  * Fixed #2940 causing gradient colors not to apply on strokes in Highcharts 4.
+  * Fixed #2939 causing wrong clipping of 3D charts rendered with highstock.js.
+  * Fixed #2930 causing JS errors on gauges in Highcharts 4.0.
+  * Fixed #2936 causing wrong Z index on 3D column.
+  * Fixed #2928 causing the halo to be misplaced on multiple pane positions and inverted line charts.
+
 # 4.0.0 / 2014-04-22
 
 * Updated Highcharts to 4.0.0
