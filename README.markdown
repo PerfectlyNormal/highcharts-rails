@@ -50,7 +50,7 @@ Or one of the themes
     //= require highcharts/themes/grid
     //= require highcharts/themes/skies
 
-Other than that, refer to the [Highcharts documentation](http://docs.highcharts.com/#home)
+Other than that, refer to the [Highcharts documentation](http://www.highcharts.com/docs)
 
 ## Licensing
 
