@@ -1,3 +1,7 @@
+# 4.0.4.1 / 2014-11-18
+
+* Update the bundled Highmaps module to 1.0.4 (#21)
+
 # 4.0.4 / 2014-09-02
 
 * Updated Highcharts to 4.0.4
