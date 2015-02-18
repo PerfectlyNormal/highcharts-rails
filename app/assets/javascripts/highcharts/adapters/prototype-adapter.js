@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v3.0.10 (2014-03-10)
+ * @license @product.name@ JS v@product.version@ (@product.date@)
  * Prototype adapter
  *
  * @author Michael Nelson, Torstein Honsi.
