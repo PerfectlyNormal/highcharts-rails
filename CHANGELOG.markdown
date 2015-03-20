@@ -1,4 +1,4 @@
-# 4.1.0 / 2015-01-26
+# 4.1.0 / 2015-02-16
 
 * Updated Highcharts to 4.1.0
   * Added polygon series type
