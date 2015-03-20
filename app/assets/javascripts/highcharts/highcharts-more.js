@@ -2,7 +2,7 @@
 // @compilation_level SIMPLE_OPTIMIZATIONS
 
 /**
- * @license Highcharts JS v4.1.3 (2015-02-27)
+ * @license Highcharts JS v4.1.4 (2015-03-10)
  *
  * (c) 2009-2014 Torstein Honsi
  *
@@ -975,6 +975,7 @@ seriesTypes.areasplinerange = extendClass(seriesTypes.arearange, {
 				shapeArgs.y = y;
 			});
 		},
+		directTouch: true,
 		trackerGroups: ['group', 'dataLabelsGroup'],
 		drawGraph: noop,
 		pointAttrToOptions: colProto.pointAttrToOptions,
@@ -1487,7 +1488,8 @@ seriesTypes.boxplot = extendClass(seriesTypes.column, {
 			}
 		});
 
-	}
+	},
+	setStackedPoints: noop // #3890
 
 
 });
