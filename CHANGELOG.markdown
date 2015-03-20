@@ -1,3 +1,10 @@
+# 4.1.3 / 2015-02-27
+
+* Updated Highcharts to 4.1.3
+  * Fixed #3900, duplicated Y axis in exported charts. Made export module more testable so it would have caught this error.
+  * Fixed #3898, zones incorrectly applied if outside axis range.
+  * Fixed #3895, error in title setter when setting a non-string value.
+
 # 4.1.2 / 2015-02-27
 
 * Updated Highcharts to 4.1.2
