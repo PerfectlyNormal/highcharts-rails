@@ -1,3 +1,8 @@
+# 4.1.1 / 2015-02-17
+
+* Updated Highcharts to 4.1.1
+  * Fixed #3826, a 4.1 regression causing markers to be clipped after setSize.
+
 # 4.1.0 / 2015-02-16
 
 * Updated Highcharts to 4.1.0
