@@ -9,7 +9,7 @@ If you are looking to include Highstock, Justin Kuepper has made [highstock-rail
 
 Add the gem to the Gemfile
 
-    gem "highcharts-rails", "~> 3.0.0"
+    gem "highcharts-rails"
     # The gem version mirrors the included version of Highcharts
 
 ## Changes
