@@ -1,3 +1,13 @@
+# 4.2.3 / 2016-04-09
+
+* Updated Highcharts to 4.2.3 (2016-02-08)
+  * Fixed #4989, Chart.getSVG function produced invalid SVG.
+  * Fixed #4999, a regression causing JS error on hovering columns having a shadow.
+  * Fixed #5001, a regression causing empty arearange series to fail with JS error.
+  * Fixed #5004, a regression causing stacked step areas to render incorrectly.
+  * Fixed #5015, a regression causing splines with null points and connectNulls: true not to render.
+  * Fixed #5016, a regression where a spline with equal X values failed to show.
+
 # 4.2.2 / 2016-04-09
 
 * Updated Highcharts to 4.2.2 (2016-02-04)
