@@ -27,8 +27,6 @@ In your JavaScript manifest (e.g. `application.js`)
 
 To include one of the other adapters
 
-    //= require highcharts/adapters/mootools-adapter
-    //= require highcharts/adapters/prototype-adapter
     //= require highcharts/adapters/standalone-framework
 
 Or the modules
@@ -41,6 +39,7 @@ Or the modules
     //= require highcharts/modules/funnel
     //= require highcharts/modules/heatmap
     //= require highcharts/modules/no-data-to-display
+    //= require highcharts/modules/offline-exporting
 
 Or one of the themes
 
