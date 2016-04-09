@@ -1,3 +1,3 @@
 module Highcharts
-  VERSION = "4.2.0"
+  VERSION = "4.2.2"
 end
