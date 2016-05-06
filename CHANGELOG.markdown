@@ -1,6 +1,33 @@
+# 4.2.5 / 2016-05-06
+
+* Updated Highcharts to 4.2.5 (2016-05-06)
+  * Added new option, exporting.printMaxWidth, to prevent printed charts cut off on the right side. Closes #2088.
+  * Added new option, title.widthAdjust and subtitle.widthAdjust, to prevent titles from flowing over elements.
+  * Added support for JPEG in offline download module, ref #5157
+  * Fixed #3070, verticalAlign didn't work with rotated data labels on column series.
+  * Fixed #4087, error 11 was not described on the website.
+  * Fixed #4670, zones colors were not applied for markers on hover.
+  * Fixed #5211, titleSetter in combination with buildText added duplicate content to the title.
+  * Fixed #5220, a regression causing JS error when resizing polar charts.
+  * Fixed #5221, support for minPointLength in xrange study.
+  * Fixed #5226, polar chart with no data failed with error.
+  * Fixed #5228, scroller.getUnionExtremes did not consider navigation axis min and max.
+  * Fixed #5230, a horizontal and opposite axis used to have wrong alignment for its title.
+  * Fixed #5234, x value of null cancelled rendering of all points.
+  * Fixed #5236, last point was not always visible due to rounding errors.
+  * Fixed #5237, inverted should not have an effect on polar charts.
+  * Fixed #5250, columns were not visible in IE10.
+  * Fixed #5254, data labels were not aligned to the point box in heatmaps.
+  * Fixed #5259, crosshair prevented point hover when drawn above points.
+  * Fixed #5261, break at the end of a label caused wrong bounding box.
+  * Fixed #5266, pinchDown was sometimes empty on Android.
+  * Fixed #5269, crosshairs on wrong point with multiple series and non-shared tooltip.
+  * Fixed #5274, dataLabels.overflow not always respected on heatmaps.
+  * Fixed issue in the xrange study with axis extremes when there were other, more extended series in the same chart.
+
 # 4.2.4 / 2016-05-06
 
-* Updated Highcharts to 4.2.4
+* Updated Highcharts to 4.2.4 (2016-04-14)
   * Added support for polar columnrange series.
   * Added e.originalEvent to drilldown event in order to catch modifier keys and other properties. Closes #5113.
   * Added new drilldown event, chart.events.drillupall, that is triggered after multiple single drillup events. Closes #5158. Closes #5159.
