@@ -23,7 +23,8 @@ for the important things.
 In your JavaScript manifest (e.g. `application.js`)
 
     //= require highcharts
-    //= require highcharts/highcharts-more # to get the new features in 2.3.0
+    // to get the new features in 2.3.0:
+    //= require highcharts/highcharts-more
 
 To include one of the other adapters
 
