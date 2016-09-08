@@ -62,7 +62,8 @@ function defaultOptions(shapeType) {
 }
 
 function isArray(obj) {
-	return Object.prototype.toString.call(obj) === '[object Array]';
+	var toStr = Object.prototype.toString.call(obj);
+	return toStr === '[object Array]' || toStr === '[object Array Iterator]';
 }
 
 function isNumber(n) {
@@ -96,7 +97,7 @@ var Annotation = function () {
 	this.init.apply(this, arguments);
 };
 Annotation.prototype = {
-	/* 
+	/*
 	 * Initialize the annotation
 	 */
 	init: function (chart, options) {
