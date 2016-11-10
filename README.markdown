@@ -41,13 +41,25 @@ Or the modules
     //= require highcharts/modules/heatmap
     //= require highcharts/modules/no-data-to-display
     //= require highcharts/modules/offline-exporting
+    //= require highcharts/modules/gantt
+    //= require highcharts/modules/grid-axis
+    //= require highcharts/modules/overlapping-datalabels
+    //= require highcharts/modules/series-label
+    //= require highcharts/modules/solid-gauge
+    //= require highcharts/modules/treemap
+    //= require highcharts/modules/broken-axis
+    //= require highcharts/modules/boost
+    //= require highcharts/modules/xrange-series
 
 Or one of the themes
 
     //= require highcharts/themes/dark-blue
     //= require highcharts/themes/dark-green
+    //= require highcharts/themes/dark-unica
     //= require highcharts/themes/gray
     //= require highcharts/themes/grid
+    //= require highcharts/themes/grid-light
+    //= require highcharts/themes/sand-signika
     //= require highcharts/themes/skies
 
 Other than that, refer to the [Highcharts documentation](http://www.highcharts.com/docs)
