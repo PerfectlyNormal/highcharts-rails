@@ -1,37 +1,55 @@
 require 'bundler/gem_tasks'
+require 'open-uri'
+require 'zip'
 
-desc "Update to the latest version of Highcharts"
-task :update, :version do |t, args|
+desc 'Update to the latest version of Highcharts'
+task :update, :version do |_, args|
+  # After highcharts 5.0.0, chart code was was seperated into to files: code/
+  # containing classic mode with styling in the code, and code/js containing
+  # styled mode, where presentational code is removed. Prior to 5.0.0 this code
+  # was contiained in the js/ folder
+  MODULE_MAPPING = %w(
+    accessibility
+    annotations
+    boost
+    broken-axis
+    canvas-tools
+    data
+    drilldown
+    exporting
+    funnel
+    gant
+    grid-axis
+    heatmap
+    no-data-to-display
+    offline-exporting
+    overlapping-datalabels
+    series-label
+    solid-gauge
+    stock
+    treemap
+    xrange-series
+  ).map do |name|
+    ["modules/#{name}.src.js", "highcharts/modules/#{name}.js"]
+  end.to_h
+  MAPPINGS = {
+    'highcharts.src.js'           => 'highcharts.js',
+    'highcharts-more.src.js'      => 'highcharts/highcharts-more.js',
+    'highcharts-3d.src.js'        => 'highcharts/highcharts-3d.js'
+  }.merge(MODULE_MAPPING).map { |src, dst| ["code/#{src}", dst] }.to_h.freeze
   version = args[:version]
-  url = "http://code.highcharts.com/zips/Highcharts-#{version}.zip"
+  url = "Http://code.highcharts.com/zips/Highcharts-#{version}.zip"
   puts "Fetching #{url}"
-  `curl -# #{url} -o tmp/#{version}.zip`
-  `unzip tmp/#{version}.zip -d tmp/#{version}`
-
-  mappings = {
-    "highcharts.src.js"           => "highcharts.js",
-    "highcharts-more.src.js"      => "highcharts/highcharts-more.js",
-    "highcharts-3d.src.js"        => "highcharts/highcharts-3d.js",
-    "standalone-framework.src.js" => "highcharts/adapters/standalone-framework.js",
-    "annotations.src.js"          => "highcharts/modules/annotations.js",
-    "canvas-tools.src.js"         => "highcharts/modules/canvas-tools.js",
-    "data.src.js"                 => "highcharts/modules/data.js",
-    "drilldown.src.js"            => "highcharts/modules/drilldown.js",
-    "exporting.src.js"            => "highcharts/modules/exporting.js",
-    "funnel.src.js"               => "highcharts/modules/funnel.js",
-    "heatmap.src.js"              => "highcharts/modules/heatmap.js",
-    "no-data-to-display.src.js"   => "highcharts/modules/no-data-to-display.js",
-    "solid-gauge.src.js"          => "highcharts/modules/solid-gauge.js",
-    "treemap.src.js"              => "highcharts/modules/treemap.js",
-    "broken-axis.src.js"          => "highcharts/modules/broken-axis.js",
-    "boost.src.js"                => "highcharts/modules/boost.js",
-    "offline-exporting.src.js"    => "highcharts/modules/offline-exporting.js",
-  }
-  dest = "app/assets/javascripts/"
-  Dir.glob("tmp/#{version}/js/**/*.src.js").each do |file|
-    name = File.basename(file)
-    FileUtils.cp file, "#{dest}#{mappings[name]}", verbose: true
+  open(url) do |f|
+    Zip::File.open_buffer(f) do |file|
+      file.each do |entry|
+        dest_rel_path = MAPPINGS[entry.name]
+        next unless dest_rel_path
+        dest_path = "app/assets/javascripts/#{dest_rel_path}"
+        FileUtils.remove(dest_path, force: true)
+        entry.extract(dest_path)
+        puts dest_rel_path + ' extracted'
+      end
+    end
   end
-  FileUtils.cp Dir.glob("tmp/#{version}/js/themes/*.js"), "#{dest}highcharts/themes/", verbose: true
-  FileUtils.cp Dir.glob("tmp/#{version}/graphics/*.png"), "app/assets/images/highcharts", verbose: true
 end
