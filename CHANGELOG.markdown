@@ -1,3 +1,37 @@
+# 5.0.0 / 2017-01-25
+
+* Updated Highcharts to 5.0.0 (2016-09-29)
+  * Added styled mode for optional separation of SVG and CSS.
+  * Added responsive option set.
+  * Added accessibility option set.
+  * Added new function, Chart.update in order to update the chart options after render time.
+  * Added new function, Chart.addCredits.
+  * Added new function, Chart.title.update.
+  * Added new function, Chart.credits.update.
+  * Added new function, Legend.update.
+  * Added new option, Renderer.definition.
+  * Added new option, exporting.error for catching errors in offline exporting.
+  * Added new option, exporting.libURL for use with offline exporting.
+  * Added new option, pane.background.className.
+  * Added new option, xAxis.className.
+  * Added new option, xAxis.crosshair.className.
+  * Added new option, plotOptions.series.dataLabels.className.
+  * Added new option, plotOptions.series.className for styling individual series.
+  * Added new option, xAxis.plotBands.className.
+  * Added new option, xAxis.plotLines.className.
+  * Added new option, plotOptions.series.zones.className.
+  * Added new option, chart.colorCount for use in styled mode.
+  * Added new option, defs for defining reusable elements in styled mode.
+  * Added new option, tooltip.padding.
+  * Added new option, series<line>.data.colorIndex for coloring points in styled mode.
+  * Added new option, tooltip.split.
+  * Added new option, chart.description for use with the accessibility module.
+  * Added new option, chart.typeDescription for use with the accessibility module.
+  * Added new option, xAxis.description for use with the accessibility module.
+  * Added new option, plotOptions.series.description for use with the accessibility module.
+  * Refactored build system to use ES6 imports and node-based build script.
+  * Changed all default colors (except series data colors) to a simplified color scheme based on just a few shared colors.
+
 # 4.2.7 / 2017-01-25
 
 * Updated Highcharts to 4.2.7 (2016-09-21)
