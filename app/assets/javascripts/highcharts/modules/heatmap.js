@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.3 (2016-11-18)
+ * @license Highcharts JS v5.0.4 (2016-11-25)
  *
  * (c) 2009-2016 Torstein Honsi
  *
@@ -18,7 +18,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var Axis = H.Axis,
             Chart = H.Chart,
             color = H.color,
@@ -582,7 +581,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var defined = H.defined,
             each = H.each,
             noop = H.noop,
@@ -669,7 +667,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var colorPointMixin = H.colorPointMixin,
             colorSeriesMixin = H.colorSeriesMixin,
             each = H.each,

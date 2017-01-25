@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.3 (2016-11-18)
+ * @license Highcharts JS v5.0.4 (2016-11-25)
  * X-range series
  *
  * (c) 2010-2016 Torstein Honsi, Lars A. V. Cabrera
@@ -22,7 +22,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
 
         var defaultPlotOptions = H.getOptions().plotOptions,
             color = H.Color,
@@ -34,7 +33,6 @@
             merge = H.merge,
             pick = H.pick,
             seriesTypes = H.seriesTypes,
-            stop = H.stop,
             wrap = H.wrap,
             Axis = H.Axis,
             Point = H.Point,
@@ -190,7 +188,6 @@
 
                     if (isNumber(plotY) && point.y !== null) {
                         if (graphic) { // update
-                            stop(graphic);
                             point.graphicOriginal[verb](
                                 merge(shapeArgs)
                             );

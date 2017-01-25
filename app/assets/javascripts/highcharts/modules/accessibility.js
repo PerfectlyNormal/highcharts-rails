@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.3 (2016-11-18)
+ * @license Highcharts JS v5.0.4 (2016-11-25)
  * Accessibility module
  *
  * (c) 2010-2016 Highsoft AS
@@ -23,7 +23,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
 
         var win = H.win,
             doc = win.document,

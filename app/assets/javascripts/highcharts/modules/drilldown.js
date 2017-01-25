@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.3 (2016-11-18)
+ * @license Highcharts JS v5.0.4 (2016-11-25)
  * Highcharts Drilldown module
  * 
  * Author: Torstein Honsi
@@ -22,7 +22,6 @@
          *
          */
 
-        'use strict';
 
         var noop = H.noop,
             color = H.color,

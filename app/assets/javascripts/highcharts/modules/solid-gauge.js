@@ -1,5 +1,5 @@
 /**
- * @license  Highcharts JS v5.0.3 (2016-11-18)
+ * @license  Highcharts JS v5.0.4 (2016-11-25)
  * Solid angular gauge module
  *
  * (c) 2010-2016 Torstein Honsi
@@ -22,7 +22,6 @@
          * License: www.highcharts.com/license
          */
 
-        'use strict';
 
         var pInt = H.pInt,
             pick = H.pick,

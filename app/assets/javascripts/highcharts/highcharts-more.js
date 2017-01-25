@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.3 (2016-11-18)
+ * @license Highcharts JS v5.0.4 (2016-11-25)
  *
  * (c) 2009-2016 Torstein Honsi
  *
@@ -18,7 +18,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             extend = H.extend,
             merge = H.merge,
@@ -126,7 +125,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var Axis = H.Axis,
             CenteredSeriesMixin = H.CenteredSeriesMixin,
             each = H.each,
@@ -711,7 +709,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             noop = H.noop,
             pick = H.pick,
@@ -1021,7 +1018,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
 
         var seriesType = H.seriesType,
             seriesTypes = H.seriesTypes;
@@ -1040,7 +1036,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var defaultPlotOptions = H.defaultPlotOptions,
             each = H.each,
             merge = H.merge,
@@ -1148,7 +1143,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             isNumber = H.isNumber,
             merge = H.merge,
@@ -1413,7 +1407,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             noop = H.noop,
             pick = H.pick,
@@ -1717,7 +1710,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             noop = H.noop,
             seriesType = H.seriesType,
@@ -1777,7 +1769,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var correctFloat = H.correctFloat,
             isNumber = H.isNumber,
             noop = H.noop,
@@ -2082,7 +2073,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var LegendSymbolMixin = H.LegendSymbolMixin,
             noop = H.noop,
             Series = H.Series,
@@ -2142,7 +2132,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var arrayMax = H.arrayMax,
             arrayMin = H.arrayMin,
             Axis = H.Axis,
@@ -2498,7 +2487,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
 
         /**
          * Extensions for polar charts. Additionally, much of the geometry required for polar charts is

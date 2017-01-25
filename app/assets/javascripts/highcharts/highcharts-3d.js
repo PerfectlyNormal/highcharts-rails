@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.3 (2016-11-18)
+ * @license Highcharts JS v5.0.4 (2016-11-25)
  *
  * 3D features for Highcharts JS
  *
@@ -18,7 +18,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         /**
          *	Mathematical Functionility
          */
@@ -141,7 +140,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var cos = Math.cos,
             PI = Math.PI,
             sin = Math.sin;
@@ -859,7 +857,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var Chart = H.Chart,
             each = H.each,
             merge = H.merge,
@@ -1097,7 +1094,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var ZAxis,
 
             Axis = H.Axis,
@@ -1507,7 +1503,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             perspective = H.perspective,
             pick = H.pick,
@@ -1763,7 +1758,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var deg2rad = H.deg2rad,
             each = H.each,
             pick = H.pick,
@@ -1954,7 +1948,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var perspective = H.perspective,
             pick = H.pick,
             seriesTypes = H.seriesTypes,
@@ -2059,7 +2052,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
 
         var Axis = H.Axis,
             SVGRenderer = H.SVGRenderer,

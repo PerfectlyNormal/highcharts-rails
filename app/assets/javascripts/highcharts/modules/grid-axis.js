@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.3 (2016-11-18)
+ * @license Highcharts JS v5.0.4 (2016-11-25)
  * GridAxis
  *
  * (c) 2016 Lars A. V. Cabrera
@@ -22,7 +22,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
 
         var dateFormat = H.dateFormat,
             each = H.each,

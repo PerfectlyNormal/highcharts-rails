@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.3 (2016-11-18)
+ * @license Highcharts JS v5.0.4 (2016-11-25)
  *
  * (c) 2009-2016 Torstein Honsi
  *
@@ -18,7 +18,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         /**
          * Highcharts module to hide overlapping data labels. This module is included in Highcharts.
          */

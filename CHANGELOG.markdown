@@ -1,3 +1,14 @@
+# 5.0.4 / 2017-01-25
+
+* Updated Highcharts to 5.0.4 (2016-11-22)
+  * Refactored animation and attr logic to always stop the single property being set. This prevents an animation from continuing after the same property has been set either through .attr or .animate.
+  * Bug fixes
+    * Fixed #5788, artifacts when animating splines before previous animation was done.
+    * Fixed #5982, additional series options were not set in exporting.
+    * Fixed #5985, issue with allowHTML in offline exporting.
+    * Fixed #5989, tooltip did not hide on touch.
+    * Fixed #6008, regression causing rotated data labels to break chart in Firefox.
+
 # 5.0.3 / 2017-01-25
 
 * Updated Highcharts to 5.0.3 (2016-11-18)

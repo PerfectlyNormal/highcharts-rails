@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.3 (2016-11-18)
+ * @license Highcharts JS v5.0.4 (2016-11-25)
  *
  * (c) 2009-2016 Torstein Honsi
  *
@@ -33,7 +33,6 @@
          * http://jsfiddle.net/highcharts/y5A37/
          */
 
-        'use strict';
 
         var labelDistance = 3,
             wrap = H.wrap,
