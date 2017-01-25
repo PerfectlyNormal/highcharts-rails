@@ -81,5 +81,6 @@ task :dist, :version do |_, args|
   system "git commit -m '#{message}'"
 
   # Tag, build and release
+  load 'lib/highcharts/version.rb' # Re-load this so Bundler gets the right version
   Rake::Task["release"].invoke
 end
