@@ -2,6 +2,20 @@ require 'bundler/gem_tasks'
 require 'open-uri'
 require 'zip'
 
+module Bundler
+  class GemHelper
+    def tag_version
+      sh "git tag -s -m \"Version #{version}\" #{version_tag}"
+      Bundler.ui.confirm "Tagged #{version_tag}."
+      yield if block_given?
+    rescue
+      Bundler.ui.error "Untagging #{version_tag} due to error."
+      sh_with_code "git tag -d #{version_tag}"
+      raise
+    end
+  end
+end
+
 desc 'Update to the latest version of Highcharts'
 task :update, :version do |_, args|
   # After highcharts 5.0.0, chart code was was seperated into to files: code/
