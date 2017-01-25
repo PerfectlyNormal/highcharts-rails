@@ -56,3 +56,30 @@ task :update, :version do |_, args|
     end
   end
 end
+
+desc 'Update and release new version of Highcharts'
+task :dist, :version do |_, args|
+  version = args[:version]
+  Rake::Task['update'].invoke(version)
+
+  # Put template in CHANGELOG
+  template = "# #{version} / #{Time.now.strftime("%Y-%m-%d")}\n\n* Updated Highcharts to #{version} ()\n  * ...\n\n"
+  system "echo '#{template}' | cat - CHANGELOG.markdown > tmp/changelog && mv tmp/changelog CHANGELOG.markdown"
+  system "open CHANGELOG.markdown -a $EDITOR"
+  puts "CHANGELOG template added. Press Enter to continue when done editing"
+  STDIN.gets
+
+  # Update version
+  system "sed -i '' -e 's/VERSION = \".*\"/VERSION = \"#{version}\"/' lib/highcharts/version.rb"
+
+  # Commit changes
+  print "Enter commit message: [Release v#{version}]"
+  message = STDIN.gets.strip
+  message = "Release v#{version}" if message == ""
+
+  system "git add CHANGELOG.markdown lib/highcharts/version.rb app/assets"
+  system "git commit -m '#{message}'"
+
+  # Tag, build and release
+  Rake::Task["release"].invoke
+end
