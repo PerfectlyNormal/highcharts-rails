@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.4 (2016-11-25)
+ * @license Highcharts JS v5.0.5 (2016-11-29)
  *
  * (c) 2009-2016 Torstein Honsi
  *
@@ -18,6 +18,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var Axis = H.Axis,
             Chart = H.Chart,
             color = H.color,
@@ -515,7 +516,16 @@
          */
         each(['fill', 'stroke'], function(prop) {
             H.Fx.prototype[prop + 'Setter'] = function() {
-                this.elem.attr(prop, ColorAxis.prototype.tweenColors(color(this.start), color(this.end), this.pos));
+                this.elem.attr(
+                    prop,
+                    ColorAxis.prototype.tweenColors(
+                        color(this.start),
+                        color(this.end),
+                        this.pos
+                    ),
+                    null,
+                    true
+                );
             };
         });
 
@@ -581,6 +591,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var defined = H.defined,
             each = H.each,
             noop = H.noop,
@@ -667,6 +678,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var colorPointMixin = H.colorPointMixin,
             colorSeriesMixin = H.colorSeriesMixin,
             each = H.each,

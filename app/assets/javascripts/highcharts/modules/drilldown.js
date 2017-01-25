@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.4 (2016-11-25)
+ * @license Highcharts JS v5.0.5 (2016-11-29)
  * Highcharts Drilldown module
  * 
  * Author: Torstein Honsi
@@ -22,6 +22,7 @@
          *
          */
 
+        'use strict';
 
         var noop = H.noop,
             color = H.color,
@@ -74,7 +75,12 @@
          */
         each(['fill', 'stroke'], function(prop) {
             H.Fx.prototype[prop + 'Setter'] = function() {
-                this.elem.attr(prop, tweenColors(color(this.start), color(this.end), this.pos));
+                this.elem.attr(
+                    prop,
+                    tweenColors(color(this.start), color(this.end), this.pos),
+                    null,
+                    true
+                );
             };
         });
 

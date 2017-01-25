@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.4 (2016-11-25)
+ * @license Highcharts JS v5.0.5 (2016-11-29)
  *
  * 3D features for Highcharts JS
  *
@@ -18,6 +18,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         /**
          *	Mathematical Functionility
          */
@@ -140,6 +141,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var cos = Math.cos,
             PI = Math.PI,
             sin = Math.sin;
@@ -857,6 +859,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var Chart = H.Chart,
             each = H.each,
             merge = H.merge,
@@ -1094,6 +1097,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var ZAxis,
 
             Axis = H.Axis,
@@ -1503,6 +1507,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var each = H.each,
             perspective = H.perspective,
             pick = H.pick,
@@ -1758,6 +1763,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var deg2rad = H.deg2rad,
             each = H.each,
             pick = H.pick,
@@ -1948,6 +1954,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var perspective = H.perspective,
             pick = H.pick,
             seriesTypes = H.seriesTypes,
@@ -2039,7 +2046,7 @@
          */
         wrap(seriesTypes.scatter.prototype, 'pointAttribs', function(proceed, point) {
             var pointOptions = proceed.apply(this, [].slice.call(arguments, 1));
-            if (point) {
+            if (this.chart.is3d() && point) {
                 pointOptions.zIndex = H.pointCameraDistance(point, this.chart);
             }
             return pointOptions;
@@ -2052,6 +2059,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
 
         var Axis = H.Axis,
             SVGRenderer = H.SVGRenderer,

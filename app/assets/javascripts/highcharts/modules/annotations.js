@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.4 (2016-11-25)
+ * @license Highcharts JS v5.0.5 (2016-11-29)
  *
  * (c) 2009-2016 Torstein Honsi
  *
@@ -18,6 +18,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
 
         var defined = H.defined,
             isNumber = H.isNumber,

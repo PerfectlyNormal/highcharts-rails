@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v5.0.4 (2016-11-25)
+ * @license Highcharts JS v5.0.5 (2016-11-29)
  *
  * (c) 2009-2016 Torstein Honsi
  *
@@ -21,6 +21,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         /* global window */
         var win = window,
             doc = win.document;
@@ -35,7 +36,7 @@
 
         var Highcharts = win.Highcharts ? win.Highcharts.error(16, true) : {
             product: 'Highcharts',
-            version: '5.0.4',
+            version: '5.0.5',
             deg2rad: Math.PI * 2 / 360,
             doc: doc,
             hasBidiBug: hasBidiBug,
@@ -57,7 +58,6 @@
                 return undefined;
             }
         };
-
         return Highcharts;
     }());
     (function(H) {
@@ -67,6 +67,7 @@
          * License: www.highcharts.com/license
          */
         /* eslint max-len: ["warn", 80, 4] */
+        'use strict';
 
         /**
          * The Highcharts object is the placeholder for all other members, and various
@@ -152,9 +153,7 @@
                 } else {
                     ret = end;
                 }
-                this.elem.animProp = 'd';
-                this.elem.attr('d', ret);
-                this.elem.animProp = null;
+                this.elem.attr('d', ret, null, true);
             },
 
             /**
@@ -176,9 +175,7 @@
                     // Other animations on SVGElement
                 } else if (elem.attr) {
                     if (elem.element) {
-                        elem.animProp = prop;
-                        elem.attr(prop, now);
-                        elem.animProp = null;
+                        elem.attr(prop, now, null, true);
                     }
 
                     // HTML styles, raw HTML content like container size
@@ -327,7 +324,7 @@
                         // three places behind (#5788)
                         isOperator = arr[i] === 'M' || arr[i] === 'L';
                         nextIsOperator = /[a-zA-Z]/.test(arr[i + 3]);
-                        if (isOperator && !nextIsOperator) {
+                        if (isOperator && nextIsOperator) {
                             arr.splice(
                                 i + 1, 0,
                                 arr[i + 1], arr[i + 2],
@@ -434,11 +431,11 @@
                     }
                 }
 
-                if (start.length && H.isNumber(shift)) {
+                if (start.length) {
 
                     // The common target length for the start and end array, where both 
                     // arrays are padded in opposite ends
-                    fullLength = end.length + shift * positionFactor * numParams;
+                    fullLength = end.length + (shift || 0) * positionFactor * numParams;
 
                     if (!reverse) {
                         prepend(end, start);
@@ -2063,6 +2060,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var each = H.each,
             isNumber = H.isNumber,
             map = H.map,
@@ -2231,6 +2229,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var SVGElement,
             SVGRenderer,
 
@@ -2643,6 +2642,9 @@
              * @param {Function} complete - A callback function to execute after setting
              *    the attributes. This makes the function compliant and interchangeable
              *    with the {@link SVGElement#animate} function.
+             * @param {boolean} continueAnimation - Used internally when `.attr` is
+             *    called as part of an animation step. Otherwise, calling `.attr` for an
+             *    attribute will stop animation for that attribute.
              *    
              * @returns {SVGElement|string|number} If used as a setter, it returns the 
              *    current {@link SVGElement} so the calls can be chained. If used as a 
@@ -2664,7 +2666,7 @@
              * element.attr('stroke'); // => 'red'
              * 
              */
-            attr: function(hash, val, complete) {
+            attr: function(hash, val, complete, continueAnimation) {
                 var key,
                     value,
                     element = this.element,
@@ -2693,7 +2695,7 @@
 
                         // Unless .attr is from the animator update, stop current
                         // running animation of this property
-                        if (key !== this.animProp) {
+                        if (!continueAnimation) {
                             stop(this, key);
                         }
 
@@ -3959,7 +3961,7 @@
 
                 // Add description
                 desc = this.createElement('desc').add();
-                desc.element.appendChild(doc.createTextNode('Created with Highcharts 5.0.4'));
+                desc.element.appendChild(doc.createTextNode('Created with Highcharts 5.0.5'));
 
 
                 renderer.defs = this.createElement('defs').add();
@@ -5669,6 +5671,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var attr = H.attr,
             createElement = H.createElement,
             css = H.css,
@@ -5984,6 +5987,12 @@
                                     // Set listeners to update the HTML div's position whenever the SVG group
                                     // position is changed
                                     extend(parentGroup, {
+                                        on: function() {
+                                            wrapper.on.apply({
+                                                element: parents[0].div
+                                            }, arguments);
+                                            return parentGroup;
+                                        },
                                         translateXSetter: function(value, key) {
                                             htmlGroupStyle.left = value + 'px';
                                             parentGroup[key] = value;
@@ -6025,6 +6034,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
 
         var VMLRenderer,
             VMLRendererExtension,
@@ -7176,6 +7186,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var color = H.color,
             each = H.each,
             getTZOffset = H.getTZOffset,
@@ -7211,7 +7222,7 @@
                 useUTC: true,
                 //timezoneOffset: 0,
 
-                VMLRadialGradientURL: 'http://code.highcharts.com/5.0.4/gfx/vml-radial-gradient.png'
+                VMLRadialGradientURL: 'http://code.highcharts.com/5.0.5/gfx/vml-radial-gradient.png'
 
             },
             chart: {
@@ -7273,12 +7284,7 @@
                 // x: 0,
                 // verticalAlign: 'top',
                 // y: null,
-
-                style: {
-                    color: '#333333',
-                    fontSize: '18px'
-                },
-
+                // style: {}, // defined inline
                 widthAdjust: -44
 
             },
@@ -7289,11 +7295,7 @@
                 // x: 0,
                 // verticalAlign: 'top',
                 // y: null,
-
-                style: {
-                    color: '#666666'
-                },
-
+                // style: {}, // defined inline
                 widthAdjust: -44
             },
 
@@ -7535,6 +7537,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var arrayMax = H.arrayMax,
             arrayMin = H.arrayMin,
             defined = H.defined,
@@ -7860,6 +7863,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var correctFloat = H.correctFloat,
             defined = H.defined,
             destroyObjectProperties = H.destroyObjectProperties,
@@ -8273,6 +8277,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
 
         var addEvent = H.addEvent,
             animObject = H.animObject,
@@ -9237,15 +9242,14 @@
 
                 // Adjust translation for padding. Y axis with categories need to go through the same (#1784).
                 if (isXAxis || hasCategories || pointRange) {
+
+                    // Get the closest points
+                    closestPointRange = axis.getClosest();
+
                     if (linkedParent) {
                         minPointOffset = linkedParent.minPointOffset;
                         pointRangePadding = linkedParent.pointRangePadding;
-
                     } else {
-
-                        // Get the closest points
-                        closestPointRange = axis.getClosest();
-
                         each(axis.series, function(series) {
                             var seriesPointRange = hasCategories ?
                                 1 :
@@ -9833,11 +9837,22 @@
 
                     // Prevent pinch zooming out of range. Check for defined is for #1946. #1734.
                     if (!this.allowZoomOutside) {
-                        if (defined(dataMin) && newMin <= min) {
-                            newMin = min;
+                        // #6014, sometimes newMax will be smaller than min (or newMin will be larger than max).
+                        if (defined(dataMin)) {
+                            if (newMin < min) {
+                                newMin = min;
+                            }
+                            if (newMin > max) {
+                                newMin = max;
+                            }
                         }
-                        if (defined(dataMax) && newMax >= max) {
-                            newMax = max;
+                        if (defined(dataMax)) {
+                            if (newMax < min) {
+                                newMax = min;
+                            }
+                            if (newMax > max) {
+                                newMax = max;
+                            }
                         }
                     }
 
@@ -10841,6 +10856,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var Axis = H.Axis,
             Date = H.Date,
             dateFormat = H.dateFormat,
@@ -11094,6 +11110,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var Axis = H.Axis,
             getMagnitude = H.getMagnitude,
             map = H.map,
@@ -11217,6 +11234,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var dateFormat = H.dateFormat,
             each = H.each,
             extend = H.extend,
@@ -11958,6 +11976,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var addEvent = H.addEvent,
             attr = H.attr,
             charts = H.charts,
@@ -12736,6 +12755,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var charts = H.charts,
             each = H.each,
             extend = H.extend,
@@ -13013,6 +13033,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var addEvent = H.addEvent,
             charts = H.charts,
             css = H.css,
@@ -13132,6 +13153,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var Legend,
 
             addEvent = H.addEvent,
@@ -14071,6 +14093,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var addEvent = H.addEvent,
             animate = H.animate,
             animObject = H.animObject,
@@ -14527,8 +14550,31 @@
                     chartTitleOptions,
                     chartSubtitleOptions;
 
-                chartTitleOptions = options.title = merge(options.title, titleOptions);
-                chartSubtitleOptions = options.subtitle = merge(options.subtitle, subtitleOptions);
+                chartTitleOptions = options.title = merge(
+
+                    // Default styles
+                    {
+                        style: {
+                            color: '#333333',
+                            fontSize: options.isStock ? '16px' : '18px' // #2944
+                        }
+                    },
+
+                    options.title,
+                    titleOptions
+                );
+                chartSubtitleOptions = options.subtitle = merge(
+
+                    // Default styles
+                    {
+                        style: {
+                            color: '#666666'
+                        }
+                    },
+
+                    options.subtitle,
+                    subtitleOptions
+                );
 
                 // add title and subtitle
                 each([
@@ -15625,6 +15671,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var Point,
 
             each = H.each,
@@ -15971,6 +16018,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var addEvent = H.addEvent,
             animObject = H.animObject,
             arrayMax = H.arrayMax,
@@ -17988,6 +18036,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var Axis = H.Axis,
             Chart = H.Chart,
             correctFloat = H.correctFloat,
@@ -18243,7 +18292,7 @@
                             // Reset stacks
                         } else {
                             stacks[type][i].total = null;
-                            stacks[type][i].cum = 0;
+                            stacks[type][i].cum = null;
                         }
                     }
                 }
@@ -18473,6 +18522,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var addEvent = H.addEvent,
             animate = H.animate,
             Axis = H.Axis,
@@ -19183,6 +19233,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var color = H.color,
             each = H.each,
             LegendSymbolMixin = H.LegendSymbolMixin,
@@ -19512,6 +19563,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var pick = H.pick,
             seriesType = H.seriesType;
 
@@ -19647,6 +19699,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var areaProto = H.seriesTypes.area.prototype,
             defaultPlotOptions = H.defaultPlotOptions,
             LegendSymbolMixin = H.LegendSymbolMixin,
@@ -19669,6 +19722,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var animObject = H.animObject,
             color = H.color,
             each = H.each,
@@ -20129,6 +20183,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
 
         var seriesType = H.seriesType;
 
@@ -20146,6 +20201,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var Series = H.Series,
             seriesType = H.seriesType;
         /**
@@ -20183,6 +20239,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var pick = H.pick,
             relativeLength = H.relativeLength;
 
@@ -20232,6 +20289,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var addEvent = H.addEvent,
             CenteredSeriesMixin = H.CenteredSeriesMixin,
             defined = H.defined,
@@ -20729,6 +20787,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var addEvent = H.addEvent,
             arrayMax = H.arrayMax,
             defined = H.defined,
@@ -21004,7 +21063,11 @@
                                 )
                                 .attr(attr);
 
-                            dataLabel.addClass('highcharts-data-label-color-' + point.colorIndex + ' ' + (options.className || ''));
+                            dataLabel.addClass(
+                                'highcharts-data-label-color-' + point.colorIndex +
+                                ' ' + (options.className || '') +
+                                (options.useHTML ? 'highcharts-tracker' : '') // #3398
+                            );
 
 
                             // Styles must be applied before add in order to read text bounding box
@@ -21585,6 +21648,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         /**
          * Highcharts module to hide overlapping data labels. This module is included in Highcharts.
          */
@@ -21733,6 +21797,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var addEvent = H.addEvent,
             Chart = H.Chart,
             createElement = H.createElement,
@@ -21788,7 +21853,11 @@
                         point.graphic.element.point = point;
                     }
                     if (point.dataLabel) {
-                        point.dataLabel.element.point = point;
+                        if (point.dataLabel.div) {
+                            point.dataLabel.div.point = point;
+                        } else {
+                            point.dataLabel.element.point = point;
+                        }
                     }
                 });
 
@@ -22138,14 +22207,24 @@
                 each(panning === 'xy' ? [1, 0] : [1], function(isX) { // xy is used in maps
                     var axis = chart[isX ? 'xAxis' : 'yAxis'][0],
                         horiz = axis.horiz,
+                        reversed = axis.reversed,
                         mousePos = e[horiz ? 'chartX' : 'chartY'],
                         mouseDown = horiz ? 'mouseDownX' : 'mouseDownY',
                         startPos = chart[mouseDown],
-                        halfPointRange = (axis.pointRange || 0) / 2,
+                        halfPointRange = (axis.pointRange || 0) / (reversed ? -2 : 2),
                         extremes = axis.getExtremes(),
                         newMin = axis.toValue(startPos - mousePos, true) + halfPointRange,
                         newMax = axis.toValue(startPos + axis.len - mousePos, true) - halfPointRange,
-                        goingLeft = startPos > mousePos; // #3613
+                        goingLeft = startPos > mousePos, // #3613
+                        tmp;
+
+                    // Swap min/max for reversed axes (#5997)
+                    if (reversed) {
+                        goingLeft = !goingLeft;
+                        tmp = newMin;
+                        newMin = newMax;
+                        newMax = tmp;
+                    }
 
                     if (axis.series.length &&
                         (goingLeft || newMin > Math.min(extremes.dataMin, extremes.min)) &&
@@ -22689,6 +22768,7 @@
          *
          * License: www.highcharts.com/license
          */
+        'use strict';
         var Chart = H.Chart,
             each = H.each,
             inArray = H.inArray,
