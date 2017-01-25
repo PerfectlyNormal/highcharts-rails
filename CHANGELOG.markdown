@@ -1,3 +1,10 @@
+# 5.0.2 / 2017-01-25
+
+* Updated Highcharts to 5.0.2 (2016-10-26)
+  * Fixed two regressions.
+    * Fixed #5887, a regression causing bubbles to move on hover.
+    * Fixed regression in v5.0.1 where the halo would be mispositioned in inverted charts.
+
 # 5.0.1 / 2017-01-25
 
 * Updated Highcharts to 5.0.1 (2016-10-26)
