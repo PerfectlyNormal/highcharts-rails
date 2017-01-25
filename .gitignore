@@ -5,3 +5,4 @@ pkg/*
 sauce
 tmp
 .DS_Store
+.ruby-version
