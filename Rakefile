@@ -26,6 +26,7 @@ task :update, :version do |t, args|
     "broken-axis.src.js"          => "highcharts/modules/broken-axis.js",
     "boost.src.js"                => "highcharts/modules/boost.js",
     "offline-exporting.src.js"    => "highcharts/modules/offline-exporting.js",
+    "series-label.src.js"         => "highcharts/modules/series-label.js",
   }
   dest = "app/assets/javascripts/"
   Dir.glob("tmp/#{version}/js/**/*.src.js").each do |file|
