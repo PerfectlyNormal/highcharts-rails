@@ -26,14 +26,9 @@ In your JavaScript manifest (e.g. `application.js`)
     // to get the new features in 2.3.0:
     //= require highcharts/highcharts-more
 
-To include one of the other adapters
-
-    //= require highcharts/adapters/standalone-framework
-
-Or the modules
+Including the modules you want and need
 
     //= require highcharts/modules/annotations
-    //= require highcharts/modules/canvas-tools
     //= require highcharts/modules/data
     //= require highcharts/modules/drilldown
     //= require highcharts/modules/exporting
@@ -49,6 +44,8 @@ Or one of the themes
     //= require highcharts/themes/gray
     //= require highcharts/themes/grid
     //= require highcharts/themes/skies
+
+Some of the modules are meant to be loaded by Highcharts on-demand, such as `canvas-tools` (https://github.com/highcharts/highcharts/issues/2311#issuecomment-25685317), so don't require them on your own.
 
 Other than that, refer to the [Highcharts documentation](http://www.highcharts.com/docs)
 
