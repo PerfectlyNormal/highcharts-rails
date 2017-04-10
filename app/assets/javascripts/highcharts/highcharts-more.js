@@ -1,10 +1,11 @@
 /**
- * @license Highcharts JS v5.0.7 (2017-01-17)
+ * @license Highcharts JS v5.0.9 (2017-04-10)
  *
  * (c) 2009-2016 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -18,7 +19,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             extend = H.extend,
             merge = H.merge,
@@ -61,11 +61,6 @@
                         mConfig = merge(pane.defaultBackgroundOptions, config);
 
 
-                        if (config.backgroundColor) {
-                            mConfig.backgroundColor = config.backgroundColor;
-                        }
-                        mConfig.color = mConfig.backgroundColor; // due to naming in plotBands
-
 
                         firstAxis.options.plotBands.unshift(mConfig);
                         axisUserOptions.plotBands = axisUserOptions.plotBands || []; // #3176
@@ -84,7 +79,7 @@
                 center: ['50%', '50%'],
                 size: '85%',
                 startAngle: 0
-                    //endAngle: startAngle + 360
+                //endAngle: startAngle + 360
             },
 
             /**
@@ -93,21 +88,6 @@
             defaultBackgroundOptions: {
                 className: 'highcharts-pane',
                 shape: 'circle',
-
-                borderWidth: 1,
-                borderColor: '#cccccc',
-                backgroundColor: {
-                    linearGradient: {
-                        x1: 0,
-                        y1: 0,
-                        x2: 0,
-                        y2: 1
-                    },
-                    stops: [
-                        [0, '#ffffff'],
-                        [1, '#e6e6e6']
-                    ]
-                },
 
                 from: -Number.MAX_VALUE, // corrected to axis min
                 innerRadius: 0,
@@ -126,7 +106,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var Axis = H.Axis,
             CenteredSeriesMixin = H.CenteredSeriesMixin,
             each = H.each,
@@ -711,7 +690,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             noop = H.noop,
             pick = H.pick,
@@ -723,13 +701,11 @@
          */
         seriesType('arearange', 'area', {
 
-            lineWidth: 1,
-
             marker: null,
             threshold: null,
             tooltip: {
 
-                pointFormat: '<span style="color:{series.color}">\u25CF</span> {series.name}: <b>{point.low}</b> - <b>{point.high}</b><br/>' // eslint-disable-line no-dupe-keys
+                pointFormat: '<span class="highcharts-color-{series.colorIndex}">\u25CF</span> {series.name}: <b>{point.low}</b> - <b>{point.high}</b><br/>'
 
             },
             trackByArea: true,
@@ -1029,7 +1005,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
 
         var seriesType = H.seriesType,
             seriesTypes = H.seriesTypes;
@@ -1048,7 +1023,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var defaultPlotOptions = H.defaultPlotOptions,
             each = H.each,
             merge = H.merge,
@@ -1158,7 +1132,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             isNumber = H.isNumber,
             merge = H.merge,
@@ -1179,11 +1152,7 @@
                 borderRadius: 3,
                 crop: false,
                 verticalAlign: 'top',
-                zIndex: 2,
-
-                // Presentational
-                borderWidth: 1,
-                borderColor: '#cccccc'
+                zIndex: 2
 
             },
             dial: {
@@ -1193,18 +1162,10 @@
                 // baseLength: '70%' // of radius
                 // rearLength: '10%'
 
-                // backgroundColor: '#000000',
-                // borderColor: '#cccccc',
-                // borderWidth: 0
-
 
             },
             pivot: {
-                //radius: 5,
-
-                //borderWidth: 0
-                //borderColor: '#cccccc',
-                //backgroundColor: '#000000'
+                //radius: 5
 
             },
             tooltip: {
@@ -1312,13 +1273,6 @@
                             .add(series.group);
 
 
-                        // Presentational attributes
-                        point.graphic.attr({
-                            stroke: dialOptions.borderColor || 'none',
-                            'stroke-width': dialOptions.borderWidth || 0,
-                            fill: dialOptions.backgroundColor || '#000000'
-                        });
-
                     }
                 });
 
@@ -1337,13 +1291,6 @@
                         .translate(center[0], center[1])
                         .add(series.group);
 
-
-                    // Presentational attributes
-                    series.pivot.attr({
-                        'stroke-width': pivotOptions.borderWidth || 0,
-                        stroke: pivotOptions.borderColor || '#cccccc',
-                        fill: pivotOptions.backgroundColor || '#000000'
-                    });
 
                 }
             },
@@ -1423,7 +1370,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             noop = H.noop,
             pick = H.pick,
@@ -1440,7 +1386,7 @@
             threshold: null,
             tooltip: {
 
-                pointFormat: '<span style="color:{point.color}">\u25CF</span> <b> {series.name}</b><br/>' + // eslint-disable-line no-dupe-keys
+                pointFormat: '<span class="highcharts-color-{point.colorIndex}">\u25CF</span> <b> {series.name}</b><br/>' +
                     'Maximum: {point.high}<br/>' +
                     'Upper quartile: {point.q3}<br/>' +
                     'Median: {point.median}<br/>' +
@@ -1448,23 +1394,7 @@
                     'Minimum: {point.low}<br/>'
 
             },
-            whiskerLength: '50%',
-
-            fillColor: '#ffffff',
-            lineWidth: 1,
-            //medianColor: null,
-            medianWidth: 2,
-            states: {
-                hover: {
-                    brightness: -0.3
-                }
-            },
-            //stemColor: null,
-            //stemDashStyle: 'solid'
-            //stemWidth: null,
-
-            //whiskerColor: null,
-            whiskerWidth: 2
+            whiskerLength: '50%'
 
 
         }, /** @lends seriesTypes.boxplot */ {
@@ -1474,20 +1404,6 @@
             },
             pointValKey: 'high', // defines the top of the tracker
 
-
-            /**
-             * Get presentational attributes
-             */
-            pointAttribs: function(point) {
-                var options = this.options,
-                    color = (point && point.color) || this.color;
-
-                return {
-                    'fill': point.fillColor || options.fillColor || color,
-                    'stroke': options.lineColor || color,
-                    'stroke-width': options.lineWidth || 0
-                };
-            },
 
 
             /**
@@ -1549,12 +1465,6 @@
                         shapeArgs = point.shapeArgs; // the box
 
 
-                    var boxAttr,
-                        stemAttr = {},
-                        whiskersAttr = {},
-                        medianAttr = {},
-                        color = point.color || series.color;
-
 
                     if (point.plotY !== undefined) {
 
@@ -1590,32 +1500,6 @@
                                 .addClass('highcharts-boxplot-median')
                                 .add(graphic);
 
-
-
-
-                            // Stem attributes
-                            stemAttr.stroke = point.stemColor || options.stemColor || color;
-                            stemAttr['stroke-width'] = pick(point.stemWidth, options.stemWidth, options.lineWidth);
-                            stemAttr.dashstyle = point.stemDashStyle || options.stemDashStyle;
-                            point.stem.attr(stemAttr);
-
-                            // Whiskers attributes
-                            if (whiskerLength) {
-                                whiskersAttr.stroke = point.whiskerColor || options.whiskerColor || color;
-                                whiskersAttr['stroke-width'] = pick(point.whiskerWidth, options.whiskerWidth, options.lineWidth);
-                                point.whiskers.attr(whiskersAttr);
-                            }
-
-                            if (doQuartiles) {
-                                boxAttr = series.pointAttribs(point);
-                                point.box.attr(boxAttr);
-                            }
-
-
-                            // Median attributes
-                            medianAttr.stroke = point.medianColor || options.medianColor || color;
-                            medianAttr['stroke-width'] = pick(point.medianWidth, options.medianWidth, options.lineWidth);
-                            point.medianShape.attr(medianAttr);
 
 
                         }
@@ -1727,7 +1611,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             noop = H.noop,
             seriesType = H.seriesType,
@@ -1738,8 +1621,6 @@
          * Start error bar series code                                                *
          *****************************************************************************/
         seriesType('errorbar', 'boxplot', {
-
-            color: '#000000',
 
             grouping: false,
             linkedTo: ':previous',
@@ -1787,7 +1668,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var correctFloat = H.correctFloat,
             isNumber = H.isNumber,
             noop = H.noop,
@@ -1804,16 +1684,6 @@
             dataLabels: {
                 inside: true
             },
-
-            lineWidth: 1,
-            lineColor: '#333333',
-            dashStyle: 'dot',
-            borderColor: '#333333',
-            states: {
-                hover: {
-                    lineWidthPlus: 0 // #3126
-                }
-            }
 
 
             // Prototype members
@@ -1839,11 +1709,9 @@
                     previousIntermediate,
                     range,
                     minPointLength = pick(options.minPointLength, 5),
+                    halfMinPointLength = minPointLength / 2,
                     threshold = options.threshold,
                     stacking = options.stacking,
-                    // Separate offsets for negative and positive columns:
-                    positiveOffset = 0,
-                    negativeOffset = 0,
                     stackIndicator,
                     tooltipY;
 
@@ -1881,12 +1749,12 @@
                     if (point.isSum) {
                         shapeArgs.y = yAxis.toPixels(range[1], true);
                         shapeArgs.height = Math.min(yAxis.toPixels(range[0], true), yAxis.len) -
-                            shapeArgs.y + positiveOffset + negativeOffset; // #4256
+                            shapeArgs.y; // #4256
 
                     } else if (point.isIntermediateSum) {
                         shapeArgs.y = yAxis.toPixels(range[1], true);
                         shapeArgs.height = Math.min(yAxis.toPixels(previousIntermediate, true), yAxis.len) -
-                            shapeArgs.y + positiveOffset + negativeOffset;
+                            shapeArgs.y;
                         previousIntermediate = range[1];
 
                         // If it's not the sum point, update previous stack end position and get
@@ -1907,25 +1775,22 @@
                     shapeArgs.height = Math.max(Math.round(shapeArgs.height), 0.001); // #3151
                     point.yBottom = shapeArgs.y + shapeArgs.height;
 
-                    // Before minPointLength, apply negative offset:
-                    shapeArgs.y -= negativeOffset;
-
-
                     if (shapeArgs.height <= minPointLength && !point.isNull) {
                         shapeArgs.height = minPointLength;
+                        shapeArgs.y -= halfMinPointLength;
+                        point.plotY = shapeArgs.y;
                         if (point.y < 0) {
-                            negativeOffset -= minPointLength;
+                            point.minPointLengthOffset = -halfMinPointLength;
                         } else {
-                            positiveOffset += minPointLength;
+                            point.minPointLengthOffset = halfMinPointLength;
                         }
+                    } else {
+                        point.minPointLengthOffset = 0;
                     }
 
-                    // After minPointLength is updated, apply positive offset:
-                    shapeArgs.y -= positiveOffset;
-
                     // Correct tooltip placement (#3014)
-                    tooltipY = point.plotY - negativeOffset - positiveOffset +
-                        (point.negative && negativeOffset >= 0 ? shapeArgs.height : 0);
+                    tooltipY = point.plotY + (point.negative ? shapeArgs.height : 0);
+
                     if (series.chart.inverted) {
                         point.tooltipPos[0] = yAxis.len - tooltipY;
                     } else {
@@ -1991,28 +1856,6 @@
             },
 
 
-            /**
-             * Postprocess mapping between options and SVG attributes
-             */
-            pointAttribs: function(point, state) {
-
-                var upColor = this.options.upColor,
-                    attr;
-
-                // Set or reset up color (#3710, update to negative)
-                if (upColor && !point.options.color) {
-                    point.color = point.y > 0 ? upColor : null;
-                }
-
-                attr = seriesTypes.column.prototype.pointAttribs.call(this, point, state);
-
-                // The dashStyle option in waterfall applies to the graph, not
-                // the points
-                delete attr.dashstyle;
-
-                return attr;
-            },
-
 
             /**
              * Return an empty path initially, because we need to know the stroke-width in order 
@@ -2043,9 +1886,11 @@
 
                     d = [
                         'M',
-                        prevArgs.x + prevArgs.width, prevArgs.y + normalizer,
+                        prevArgs.x + prevArgs.width,
+                        prevArgs.y + data[i - 1].minPointLengthOffset + normalizer,
                         'L',
-                        pointArgs.x, prevArgs.y + normalizer
+                        pointArgs.x,
+                        prevArgs.y + data[i - 1].minPointLengthOffset + normalizer
                     ];
 
                     if (data[i - 1].y < 0) {
@@ -2107,7 +1952,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var LegendSymbolMixin = H.LegendSymbolMixin,
             noop = H.noop,
             Series = H.Series,
@@ -2151,8 +1995,6 @@
             },
             drawGraph: function() {
 
-                this.options.fillColor = this.color; // Hack into the fill logic in area.drawGraph
-
                 seriesTypes.area.prototype.drawGraph.call(this);
             },
             drawLegendSymbol: LegendSymbolMixin.drawRectangle,
@@ -2167,7 +2009,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var arrayMax = H.arrayMax,
             arrayMin = H.arrayMin,
             Axis = H.Axis,
@@ -2196,10 +2037,6 @@
             },
             // displayNegative: true,
             marker: {
-
-                // fillOpacity: 0.5,
-                lineColor: null, // inherit from series.color
-                lineWidth: 1,
 
                 // Avoid offset in Point.setState
                 radius: null,
@@ -2237,18 +2074,6 @@
             bubblePadding: true,
             zoneAxis: 'z',
 
-
-            pointAttribs: function(point, state) {
-                var markerOptions = this.options.marker,
-                    fillOpacity = pick(markerOptions.fillOpacity, 0.5),
-                    attr = Series.prototype.pointAttribs.call(this, point, state);
-
-                if (fillOpacity !== 1) {
-                    attr.fill = color(attr.fill).setOpacity(fillOpacity).get('rgba');
-                }
-
-                return attr;
-            },
 
 
             /**
@@ -2361,11 +2186,11 @@
 
                     if (isNumber(radius) && radius >= this.minPxSize / 2) {
                         // Shape arguments
-                        point.marker = {
+                        point.marker = H.extend(point.marker, {
                             radius: radius,
                             width: 2 * radius,
                             height: 2 * radius
-                        };
+                        });
 
                         // Alignment box for the data label
                         point.dlBox = {
@@ -2389,7 +2214,7 @@
             haloPath: function(size) {
                 return Point.prototype.haloPath.call(
                     this,
-                    size === 0 ? 0 : this.marker.radius + size // #6067
+                    size === 0 ? 0 : (this.marker ? this.marker.radius || 0 : 0) + size // #6067
                 );
             },
             ttBelow: false
@@ -2510,7 +2335,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
 
         /**
          * Extensions for polar charts. Additionally, much of the geometry required for polar charts is

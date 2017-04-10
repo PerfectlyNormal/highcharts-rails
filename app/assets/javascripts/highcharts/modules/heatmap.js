@@ -1,10 +1,11 @@
 /**
- * @license Highcharts JS v5.0.7 (2017-01-17)
+ * @license Highcharts JS v5.0.9 (2017-04-10)
  *
  * (c) 2009-2016 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -18,7 +19,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var Axis = H.Axis,
             Chart = H.Chart,
             color = H.color,
@@ -54,9 +54,7 @@
                     animation: {
                         duration: 50
                     },
-                    width: 0.01,
-
-                    color: '#999999'
+                    width: 0.01
 
                 },
                 labels: {
@@ -69,9 +67,14 @@
                 showInLegend: true
             },
 
-            // Properties to preserve after destroy, for Axis.update (#5881)
-            keepProps: ['legendGroup', 'legendItem', 'legendSymbol']
-                .concat(Axis.prototype.keepProps),
+            // Properties to preserve after destroy, for Axis.update (#5881, #6025)
+            keepProps: [
+                'legendGroup',
+                'legendItemHeight',
+                'legendItemWidth',
+                'legendItem',
+                'legendSymbol'
+            ].concat(Axis.prototype.keepProps),
 
             /**
              * Initialize the color axis
@@ -159,10 +162,6 @@
                     dataClasses.push(dataClass);
                     if (!dataClass.color) {
                         if (options.dataClassColor === 'category') {
-
-                            colors = chart.options.colors;
-                            colorCount = colors.length;
-                            dataClass.color = colors[colorCounter];
 
                             dataClass.colorIndex = colorCounter;
 
@@ -410,10 +409,6 @@
                             .add(this.legendGroup);
 
 
-                        this.cross.attr({
-                            fill: this.crosshair.color
-                        });
-
 
                     }
                 }
@@ -596,7 +591,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var defined = H.defined,
             each = H.each,
             noop = H.noop,
@@ -647,8 +641,6 @@
             colorKey: 'value',
 
 
-            pointAttribs: seriesTypes.column.prototype.pointAttribs,
-
 
             /**
              * In choropleth maps, the color is a result of the value, so this needs translation too
@@ -691,7 +683,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var colorPointMixin = H.colorPointMixin,
             colorSeriesMixin = H.colorSeriesMixin,
             each = H.each,
@@ -707,8 +698,6 @@
         seriesType('heatmap', 'scatter', {
             animation: false,
             borderWidth: 0,
-
-            nullColor: '#f7f7f7',
 
             dataLabels: {
                 formatter: function() { // #2945
@@ -791,7 +780,9 @@
 
                 each(this.points, function(point) {
 
-                    point.graphic.attr(this.colorAttribs(point));
+                    // In styled mode, use CSS, otherwise the fill used in the style
+                    // sheet will take precesence over the fill attribute.
+                    point.graphic.css(this.colorAttribs(point));
 
                 }, this);
             },

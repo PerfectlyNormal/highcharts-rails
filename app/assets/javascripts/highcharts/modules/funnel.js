@@ -1,11 +1,12 @@
 /**
- * @license Highcharts JS v5.0.7 (2017-01-17)
+ * @license Highcharts JS v5.0.9 (2017-04-10)
  * Highcharts funnel module
  *
  * (c) 2010-2016 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -22,7 +23,6 @@
          * License: www.highcharts.com/license
          */
         /* eslint indent:0 */
-        'use strict';
 
         // create shortcuts
         var seriesType = Highcharts.seriesType,
@@ -42,20 +42,6 @@
                 size: true, // to avoid adapting to data label size in Pie.drawDataLabels
 
 
-                // Presentational
-                dataLabels: {
-                    //position: 'right',
-                    connectorWidth: 1
-                        //connectorColor: null
-                },
-                states: {
-                    select: {
-                        color: '#cccccc',
-                        borderColor: '#000000',
-                        shadow: false
-                    }
-                }
-
             },
 
             // Properties
@@ -68,7 +54,7 @@
                 translate: function() {
 
                     var
-                    // Get positions - either an integer or a percentage string must be given
+                        // Get positions - either an integer or a percentage string must be given
                         getLength = function(length, relativeTo) {
                             return (/%$/).test(length) ?
                                 relativeTo * parseInt(length, 10) / 100 :

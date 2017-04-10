@@ -1,10 +1,11 @@
 /**
- * @license Highcharts JS v5.0.7 (2017-01-17)
+ * @license Highcharts JS v5.0.9 (2017-04-10)
  *
  * 3D features for Highcharts JS
  *
  * @license: www.highcharts.com/license
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -18,7 +19,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         /**
          *	Mathematical Functionility
          */
@@ -141,7 +141,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var cos = Math.cos,
             PI = Math.PI,
             sin = Math.sin;
@@ -220,6 +219,43 @@
         }
 
 
+        /**
+         * Override the SVGRenderer initiator to add definitions used by brighter and
+         * darker faces of the cuboids.
+         */
+        wrap(SVGRenderer.prototype, 'init', function(proceed) {
+            proceed.apply(this, [].slice.call(arguments, 1));
+
+            each([{
+                name: 'darker',
+                slope: 0.6
+            }, {
+                name: 'brighter',
+                slope: 1.4
+            }], function(cfg) {
+                this.definition({
+                    tagName: 'filter',
+                    id: 'highcharts-' + cfg.name,
+                    children: [{
+                        tagName: 'feComponentTransfer',
+                        children: [{
+                            tagName: 'feFuncR',
+                            type: 'linear',
+                            slope: cfg.slope
+                        }, {
+                            tagName: 'feFuncG',
+                            type: 'linear',
+                            slope: cfg.slope
+                        }, {
+                            tagName: 'feFuncB',
+                            type: 'linear',
+                            slope: cfg.slope
+                        }]
+                    }]
+                });
+            }, this);
+        });
+
 
         SVGRenderer.prototype.toLinePath = function(points, closed) {
             var result = [];
@@ -249,10 +285,6 @@
                 destroy = result.destroy,
                 paths = this.cuboidPath(shapeArgs);
 
-
-            result.attr({
-                'stroke-linejoin': 'round'
-            });
 
 
             // create the 3 sides
@@ -299,7 +331,15 @@
                 return this;
             };
 
-            result.attr = function(args) {
+            result.attr = function(args, val) {
+
+                // Resolve setting attributes by string name
+                if (typeof args === 'string' && typeof val !== 'undefined') {
+                    var key = args;
+                    args = {};
+                    args[key] = val;
+                }
+
                 if (args.shapeArgs || defined(args.x)) {
                     var shapeArgs = args.shapeArgs || args;
                     var paths = this.renderer.cuboidPath(shapeArgs);
@@ -384,38 +424,46 @@
 
             // The 8 corners of the cube
             var pArr = [{
-                x: x,
-                y: y,
-                z: z
-            }, {
-                x: x + w,
-                y: y,
-                z: z
-            }, {
-                x: x + w,
-                y: y + h,
-                z: z
-            }, {
-                x: x,
-                y: y + h,
-                z: z
-            }, {
-                x: x,
-                y: y + h,
-                z: z + d
-            }, {
-                x: x + w,
-                y: y + h,
-                z: z + d
-            }, {
-                x: x + w,
-                y: y,
-                z: z + d
-            }, {
-                x: x,
-                y: y,
-                z: z + d
-            }];
+                    x: x,
+                    y: y,
+                    z: z
+                },
+                {
+                    x: x + w,
+                    y: y,
+                    z: z
+                },
+                {
+                    x: x + w,
+                    y: y + h,
+                    z: z
+                },
+                {
+                    x: x,
+                    y: y + h,
+                    z: z
+                },
+                {
+                    x: x,
+                    y: y + h,
+                    z: z + d
+                },
+                {
+                    x: x + w,
+                    y: y + h,
+                    z: z + d
+                },
+                {
+                    x: x + w,
+                    y: y,
+                    z: z + d
+                },
+                {
+                    x: x,
+                    y: y,
+                    z: z + d
+                }
+            ];
 
             // apply perspective
             pArr = perspective(pArr, chart, shapeArgs.insidePlotArea);
@@ -860,7 +908,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var Chart = H.Chart,
             each = H.each,
             merge = H.merge,
@@ -1008,6 +1055,24 @@
         });
 
 
+        /**
+         * Override the getContainer by adding the required CSS classes for column 
+         * sides (#6018)
+         */
+        wrap(Chart.prototype, 'getContainer', function(proceed) {
+            proceed.apply(this, [].slice.call(arguments, 1));
+
+            this.renderer.definition({
+                tagName: 'style',
+                textContent: '.highcharts-3d-top{' +
+                    'filter: url(#highcharts-brighter)' +
+                    '}\n' +
+                    '.highcharts-3d-side{' +
+                    'filter: url(#highcharts-darker)' +
+                    '}\n'
+            });
+        });
+
 
         wrap(Chart.prototype, 'setClassName', function(proceed) {
             proceed.apply(this, [].slice.call(arguments, 1));
@@ -1099,7 +1164,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var ZAxis,
 
             Axis = H.Axis,
@@ -1118,7 +1182,7 @@
         wrap(Axis.prototype, 'setOptions', function(proceed, userOptions) {
             var options;
             proceed.call(this, userOptions);
-            if (this.chart.is3d()) {
+            if (this.chart.is3d() && this.coll !== 'colorAxis') {
                 options = this.options;
                 options.tickWidth = pick(options.tickWidth, 0);
                 options.gridLineWidth = pick(options.gridLineWidth, 1);
@@ -1129,7 +1193,7 @@
             proceed.apply(this, [].slice.call(arguments, 1));
 
             // Do not do this if the chart is not 3D
-            if (!this.chart.is3d()) {
+            if (!this.chart.is3d() || this.coll === 'colorAxis') {
                 return;
             }
 
@@ -1166,11 +1230,6 @@
                     }).add();
 
 
-                    this.bottomFrame.attr({
-                        fill: fbottom.color || 'none',
-                        stroke: fbottom.color || 'none'
-                    });
-
                 } else {
                     this.bottomFrame.animate(bottomShape);
                 }
@@ -1192,11 +1251,6 @@
                     }).add();
 
 
-                    this.backFrame.attr({
-                        fill: fback.color || 'none',
-                        stroke: fback.color || 'none'
-                    });
-
                 } else {
                     this.backFrame.animate(backShape);
                 }
@@ -1216,11 +1270,6 @@
                     }).add();
 
 
-                    this.sideFrame.attr({
-                        fill: fside.color || 'none',
-                        stroke: fside.color || 'none'
-                    });
-
 
                 } else {
                     this.sideFrame.animate(sideShape);
@@ -1232,7 +1281,7 @@
             var path = proceed.apply(this, [].slice.call(arguments, 1));
 
             // Do not do this if the chart is not 3D
-            if (!this.chart.is3d()) {
+            if (!this.chart.is3d() || this.coll === 'colorAxis') {
                 return path;
             }
 
@@ -1283,7 +1332,7 @@
 
         wrap(Axis.prototype, 'getPlotBandPath', function(proceed) {
             // Do not do this if the chart is not 3D
-            if (!this.chart.is3d()) {
+            if (!this.chart.is3d() || this.coll === 'colorAxis') {
                 return proceed.apply(this, [].slice.call(arguments, 1));
             }
 
@@ -1323,7 +1372,7 @@
             var path = proceed.apply(this, [].slice.call(arguments, 1));
 
             // Do not do this if the chart is not 3D
-            if (!this.axis.chart.is3d()) {
+            if (!this.axis.chart.is3d() || this.coll === 'colorAxis') {
                 return path;
             }
 
@@ -1352,7 +1401,7 @@
             var pos = proceed.apply(this, [].slice.call(arguments, 1));
 
             // Do not do this if the chart is not 3D
-            if (this.axis.chart.is3d()) {
+            if (this.axis.chart.is3d() && this.coll !== 'colorAxis') {
                 pos = perspective([this.axis.swapZ({
                     x: pos.x,
                     y: pos.y,
@@ -1363,7 +1412,7 @@
         });
 
         H.wrap(Axis.prototype, 'getTitlePosition', function(proceed) {
-            var is3d = this.chart.is3d(),
+            var is3d = this.chart.is3d() && this.coll !== 'colorAxis',
                 pos,
                 axisTitleMargin;
 
@@ -1431,11 +1480,11 @@
         };
 
         ZAxis = H.ZAxis = function() {
-            this.isZAxis = true;
             this.init.apply(this, arguments);
         };
         extend(ZAxis.prototype, Axis.prototype);
         extend(ZAxis.prototype, {
+            isZAxis: true,
             setOptions: function(userOptions) {
                 userOptions = merge({
                     offset: 0,
@@ -1474,7 +1523,7 @@
                         axis.hasVisibleSeries = true;
 
                         // Validate threshold in logarithmic axes
-                        if (axis.isLog && threshold <= 0) {
+                        if (axis.positiveValuesOnly && threshold <= 0) {
                             threshold = null;
                         }
 
@@ -1518,7 +1567,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var each = H.each,
             perspective = H.perspective,
             pick = H.pick,
@@ -1655,23 +1703,6 @@
         });
 
 
-        function pointAttribs(proceed) {
-            var attr = proceed.apply(this, [].slice.call(arguments, 1));
-
-            if (this.chart.is3d()) {
-                // Set the fill color to the fill color to provide a smooth edge
-                attr.stroke = this.options.edgeColor || attr.fill;
-                attr['stroke-width'] = pick(this.options.edgeWidth, 1); // #4055
-            }
-
-            return attr;
-        }
-
-        wrap(seriesTypes.column.prototype, 'pointAttribs', pointAttribs);
-        if (seriesTypes.columnrange) {
-            wrap(seriesTypes.columnrange.prototype, 'pointAttribs', pointAttribs);
-        }
-
 
         function draw3DPoints(proceed) {
             // Do not do this if the chart is not 3D
@@ -1774,7 +1805,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var deg2rad = H.deg2rad,
             each = H.each,
             pick = H.pick,
@@ -1835,18 +1865,6 @@
             return this.series.chart.is3d() ? [] : proceed.call(this, args[1]);
         });
 
-
-        wrap(seriesTypes.pie.prototype, 'pointAttribs', function(proceed, point, state) {
-            var attr = proceed.call(this, point, state),
-                options = this.options;
-
-            if (this.chart.is3d()) {
-                attr.stroke = options.edgeColor || point.color || this.color;
-                attr['stroke-width'] = pick(options.edgeWidth, 1);
-            }
-
-            return attr;
-        });
 
 
         wrap(seriesTypes.pie.prototype, 'drawPoints', function(proceed) {
@@ -1965,7 +1983,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
         var perspective = H.perspective,
             pick = H.pick,
             Point = H.Point,
@@ -2081,68 +2098,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
-
-        var Axis = H.Axis,
-            SVGRenderer = H.SVGRenderer,
-            VMLRenderer = H.VMLRenderer;
-
-        /**
-         *	Extension to the VML Renderer
-         */
-        if (VMLRenderer) {
-
-            H.setOptions({
-                animate: false
-            });
-
-            VMLRenderer.prototype.cuboid = SVGRenderer.prototype.cuboid;
-            VMLRenderer.prototype.cuboidPath = SVGRenderer.prototype.cuboidPath;
-
-            VMLRenderer.prototype.toLinePath = SVGRenderer.prototype.toLinePath;
-
-            VMLRenderer.prototype.createElement3D = SVGRenderer.prototype.createElement3D;
-
-            VMLRenderer.prototype.arc3d = function(shapeArgs) {
-                var result = SVGRenderer.prototype.arc3d.call(this, shapeArgs);
-                result.css({
-                    zIndex: result.zIndex
-                });
-                return result;
-            };
-
-            H.VMLRenderer.prototype.arc3dPath = H.SVGRenderer.prototype.arc3dPath;
-
-            H.wrap(Axis.prototype, 'render', function(proceed) {
-                proceed.apply(this, [].slice.call(arguments, 1));
-                // VML doesn't support a negative z-index
-                if (this.sideFrame) {
-                    this.sideFrame.css({
-                        zIndex: 0
-                    });
-                    this.sideFrame.front.attr({
-                        fill: this.sideFrame.color
-                    });
-                }
-                if (this.bottomFrame) {
-                    this.bottomFrame.css({
-                        zIndex: 1
-                    });
-                    this.bottomFrame.front.attr({
-                        fill: this.bottomFrame.color
-                    });
-                }
-                if (this.backFrame) {
-                    this.backFrame.css({
-                        zIndex: 0
-                    });
-                    this.backFrame.front.attr({
-                        fill: this.backFrame.color
-                    });
-                }
-            });
-
-        }
 
 
     }(Highcharts));
