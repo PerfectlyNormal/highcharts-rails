@@ -1,6 +1,6 @@
 # 5.0.8 / 2017-04-10
 
-* Updated Highcharts to 5.0.7 (2017-03-08)
+* Updated Highcharts to 5.0.8 (2017-03-08)
   * Added a refactored Boost module based on WebGL. Details and API to be announced.
   * Added animation on graph mouse over and mouse out.
   * Added hooks so that users can define their own log axis conversion functions, and can advertise that the log axis should allow negative values.
