@@ -1,3 +1,7 @@
+# 5.0.9 / 2017-04-10
+
+* Updated Highcharts to 5.0.9 (2017-03-08)
+
 # 5.0.8 / 2017-04-10
 
 * Updated Highcharts to 5.0.8 (2017-03-08)
