@@ -1,10 +1,11 @@
 /**
- * @license Highcharts JS v5.0.0 (2016-09-29)
+ * @license Highcharts JS v5.0.8 (2017-04-10)
  *
  * (c) 2009-2016 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -22,7 +23,6 @@
          * @author Torstein Honsi
          */
 
-        'use strict';
         /* global document */
         // Load the fonts
         Highcharts.createElement('link', {

@@ -1,11 +1,12 @@
 /**
- * @license Highcharts JS v5.0.7 (2017-01-17)
+ * @license Highcharts JS v5.0.8 (2017-04-10)
  *
  * (c) 2014 Highsoft AS
  * Authors: Jon Arild Nygard / Oystein Moseng
  *
  * License: www.highcharts.com/license
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -20,7 +21,6 @@
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
 
         var seriesType = H.seriesType,
             seriesTypes = H.seriesTypes,
@@ -81,6 +81,7 @@
                 headerFormat: '',
                 pointFormat: '<b>{point.name}</b>: {point.value}</b><br/>'
             },
+            ignoreHiddenPoint: true,
             layoutAlgorithm: 'sliceAndDice',
             layoutStartingDirection: 'vertical',
             alternateStartingDirection: false,
@@ -92,19 +93,6 @@
                     y: 10
                 }
             },
-
-            // Presentational options
-            borderColor: '#e6e6e6',
-            borderWidth: 1,
-            opacity: 0.15,
-            states: {
-                hover: {
-                    borderColor: '#999999',
-                    brightness: seriesTypes.heatmap ? 0 : 0.1,
-                    opacity: 0.75,
-                    shadow: false
-                }
-            }
 
 
             // Prototype members
@@ -317,8 +305,9 @@
                         x2,
                         y1,
                         y2,
-                        strokeWidth = series.pointAttribs(point)['stroke-width'] || 0,
-                        crispCorr = (strokeWidth % 2) / 2;
+                        crispCorr = 0;
+
+
 
                     // Points which is ignored, have no values.
                     if (values && node.visible) {
@@ -351,8 +340,19 @@
                     point = series.points[node.i];
                     level = series.levelMap[node.levelDynamic];
                     // Select either point color, level color or inherited color.
-                    color = pick(point && point.options.color, level && level.color, color);
-                    colorIndex = pick(point && point.options.colorIndex, level && level.colorIndex, colorIndex);
+                    color = pick(
+                        point && point.options.color,
+                        level && level.color,
+                        color,
+                        series.color
+                    );
+                    colorIndex = pick(
+                        point && point.options.colorIndex,
+                        level && level.colorIndex,
+                        colorIndex,
+                        series.colorIndex
+                    );
+
                     if (point) {
                         point.color = color;
                         point.colorIndex = colorIndex;
@@ -683,47 +683,6 @@
             },
 
 
-            /**
-             * Get presentational attributes
-             */
-            pointAttribs: function(point, state) {
-                var level = this.levelMap[point.node.levelDynamic] || {},
-                    options = this.options,
-                    attr,
-                    stateOptions = (state && options.states[state]) || {},
-                    className = point.getClassName(),
-                    opacity;
-
-                // Set attributes by precedence. Point trumps level trumps series. Stroke width uses pick
-                // because it can be 0.
-                attr = {
-                    'stroke': point.borderColor || level.borderColor || stateOptions.borderColor || options.borderColor,
-                    'stroke-width': pick(point.borderWidth, level.borderWidth, stateOptions.borderWidth, options.borderWidth),
-                    'dashstyle': point.borderDashStyle || level.borderDashStyle || stateOptions.borderDashStyle || options.borderDashStyle,
-                    'fill': point.color || this.color
-                };
-
-                // Hide levels above the current view
-                if (className.indexOf('highcharts-above-level') !== -1) {
-                    attr.fill = 'none';
-                    attr['stroke-width'] = 0;
-
-                    // Nodes with children that accept interaction
-                } else if (className.indexOf('highcharts-internal-node-interactive') !== -1) {
-                    opacity = pick(stateOptions.opacity, options.opacity);
-                    attr.fill = color(attr.fill).setOpacity(opacity).get();
-                    attr.cursor = 'pointer';
-                    // Hide nodes that have children
-                } else if (className.indexOf('highcharts-internal-node') !== -1) {
-                    attr.fill = 'none';
-
-                } else if (state) {
-                    // Brighten and hoist the hover nodes
-                    attr.fill = color(attr.fill).brighten(stateOptions.brightness).get();
-                }
-                return attr;
-            },
-
 
             /**
              * Extending ColumnSeries drawPoints
@@ -922,9 +881,13 @@
             },
             setState: function(state) {
                 H.Point.prototype.setState.call(this, state);
-                this.graphic.attr({
-                    zIndex: state === 'hover' ? 1 : 0
-                });
+
+                // Graphic does not exist when point is not visible.
+                if (this.graphic) {
+                    this.graphic.attr({
+                        zIndex: state === 'hover' ? 1 : 0
+                    });
+                }
             },
             setVisible: seriesTypes.pie.prototype.pointClass.prototype.setVisible
         });

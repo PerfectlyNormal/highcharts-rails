@@ -1,11 +1,12 @@
 /**
- * @license Highcharts JS v5.0.7 (2017-01-17)
+ * @license Highcharts JS v5.0.8 (2017-04-10)
  * Highcharts Drilldown module
  * 
  * Author: Torstein Honsi
  * License: www.highcharts.com/license
  *
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -22,7 +23,6 @@
          *
          */
 
-        'use strict';
 
         var noop = H.noop,
             color = H.color,
@@ -90,19 +90,6 @@
         });
         defaultOptions.drilldown = {
 
-            activeAxisLabelStyle: {
-                cursor: 'pointer',
-                color: '#003399',
-                fontWeight: 'bold',
-                textDecoration: 'underline'
-            },
-            activeDataLabelStyle: {
-                cursor: 'pointer',
-                color: '#003399',
-                fontWeight: 'bold',
-                textDecoration: 'underline'
-            },
-
             animation: {
                 duration: 500
             },
@@ -153,7 +140,7 @@
 
 
             colorProp = {
-                color: point.color || oldSeries.color
+                colorIndex: pick(point.colorIndex, oldSeries.colorIndex)
             };
 
 
@@ -469,9 +456,6 @@
                     if (series.options._ddSeriesId === level.lowerSeriesOptions._ddSeriesId) {
                         animateFrom = level.shapeArgs;
 
-                        // Add the point colors to animate from
-                        animateFrom.fill = level.color;
-
                     }
                 });
 
@@ -480,9 +464,6 @@
                 each(this.points, function(point) {
                     var animateTo = point.shapeArgs;
 
-
-                    // Add the point colors to animate to
-                    animateTo.fill = point.color;
 
 
                     if (point.graphic) {
@@ -537,8 +518,6 @@
                     delete point.graphic;
 
 
-                    animateTo.fill = level.color;
-
 
                     if (animationOptions) {
                         graphic.animate(
@@ -573,9 +552,6 @@
                         each(this.points, function(point, i) {
                             var animateTo = point.shapeArgs;
 
-
-                            animateFrom.fill = level.color;
-                            animateTo.fill = point.color;
 
 
                             if (point.graphic) {
@@ -688,25 +664,16 @@
                     label.drillable = true;
 
 
-                    if (!label.basicStyles) {
-                        label.basicStyles = H.merge(label.styles);
-                    }
-
 
                     label
                         .addClass('highcharts-drilldown-axis-label')
 
-                    .css(axis.chart.options.drilldown.activeAxisLabelStyle)
-
-                    .on('click', function(e) {
-                        axis.drilldownCategory(pos, e);
-                    });
+                        .on('click', function(e) {
+                            axis.drilldownCategory(pos, e);
+                        });
 
                 } else if (label && label.drillable) {
 
-
-                    label.styles = {}; // reset for full overwrite of styles
-                    label.css(label.basicStyles);
 
 
                     label.on('click', null); // #3806			
@@ -778,10 +745,6 @@
                         .addClass('highcharts-drilldown-data-label');
 
 
-                    point.dataLabel
-                        .css(css)
-                        .css(pointCSS);
-
                 }
             }, this);
         });
@@ -794,10 +757,6 @@
                     if (point.drilldown && point.graphic) {
                         point.graphic.addClass('highcharts-drilldown-point');
 
-
-                        point.graphic.css({
-                            cursor: 'pointer'
-                        });
 
                     }
                 });
