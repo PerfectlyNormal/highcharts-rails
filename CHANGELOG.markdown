@@ -1,3 +1,96 @@
+# 5.0.10 / 2017-04-10
+
+* Updated Highcharts to 5.0.10 (2017-03-31)
+  * Added !default statement to SASS variables for easier configuration. Closes #6436.
+  * Added new option, plotOptions.column.crisp, to allow disabling crisp columns and subsequent rendering issues with densely packed items. Closes #5755.
+  * Added new option, findNearestPointBy to declare how the tooltip searches for points. #6231.
+  * Refactored the Pane object to keep track of its own backgrounds, more decoupled from Axis.
+  * Bug fixes
+    * Fixed #3481, title and subtitle were not resizing chart correctly when using useHTML on true.
+    * Fixed #3936, colorAxis was not updated through chart.update.
+    * Fixed #4964, missing plotband when small range.
+    * Fixed #6007, exporting after chart.update() threw errors.
+    * Fixed #6144, empty categories caused wrong render of tooltip.
+    * Fixed #6191, dead clip path references.
+    * Fixed #6203, yAxis extremes were wrong calculated for visible scatter points
+    * Fixed #6258, text labels with ellipsis had inconsistent behavior.
+    * Fixed #6279, error when hiding series of line polar using data module.
+    * Fixed #6359, softMin/softMax didn't work in combination with floor/ceiling.
+    * Fixed #6430, areasplinerange polar curve path was wrongly rendered.
+    * Fixed #6431, addition to #6476, stickyTracking should default to true when there is a shared tooltip.
+    * Fixed #6433, updating Axis with plotBands rendered redundant nodes.
+    * Fixed #6437, 3D pie chart disappeared when drilling down after resize.
+    * Fixed #6444, exporting the second time failed with axis extremes.
+    * Fixed #6449, series with noSharedTooltip was inaccessible with shared tooltip.
+    * Fixed #6452, chart.update was not redrawing axes when setting alignTicks to false.
+    * Fixed #6456, tooltip didn't show on hovering outside candlestick and OHLC series.
+    * Fixed #6458, named color deduction was case sensitive.
+    * Fixed #6459, colors of boxplot series points would not update.
+    * Fixed #6463, missing closing sign in RegEx caused wrong handling of pseudo attributes.
+    * Fixed #6465, first data label in polar charts was not visible.
+    * Fixed #6469, series got lost when mixing category data in a dual axis chart.
+    * Fixed #6470, exporting failed in IE8 when data labels were enabled.
+    * Fixed #6473, wrong text wrapping with textOutline: none.
+    * Fixed #6474, custom CSS property was injected into the DOM. Added to blacklist.
+    * Fixed #6474, text outlines were not properly cleaned up on resizing.
+    * Fixed #6476, shared tooltip with disabled stickyTracking did not work.
+    * Fixed #6477, regression on crosshairs with snap in a bubble chart.
+    * Fixed #6479, responsive rules didn't apply to panes.
+    * Fixed #6481, offline export of pie charts to PDF not working in Firefox and Safari.
+    * Fixed #6487, contrast color was not applied for a justified label on a column.
+    * Fixed #6497, horizontal legend layout didn't respect spacing setting.
+    * Fixed #6499, offline export fails with allowHTML despite no HTML in chart.
+    * Fixed #6502, missing chart series and axis in combined logarithmic chart.
+    * Fixed #6518, wrong marker positions when hovering after redrawing in boost module.
+    * Fixed #6519, empty space caused overlapping in legend.
+    * Fixed #6521, missing label for narrow plot band.
+    * Fixed #6089, chart.update not taking effect on panes. Also closes #6438.
+
+# 5.0.9 / 2017-04-10
+
+* Updated Highcharts to 5.0.9 (2017-03-08)
+
+# 5.0.8 / 2017-04-10
+
+* Updated Highcharts to 5.0.8 (2017-03-08)
+  * Added a refactored Boost module based on WebGL. Details and API to be announced.
+  * Added animation on graph mouse over and mouse out.
+  * Added hooks so that users can define their own log axis conversion functions, and can advertise that the log axis should allow negative values.
+  * Added new option, solidgauge.rounded.
+  * Added support for relative chart.height as a percentage of the width. This allows for fixed aspect ratio.
+  * Bug fixes
+    * Fixed #223, pie chart data labels overflowed after pie reached minimum size.
+    * Fixed #2322, updating series type caused remnants of the original series type after multiple updates.
+    * Fixed #4916, data values were lost in export after updating a point from a numeric or array configuration to an object configuration.
+    * Fixed #5915, returning false from tooltip formatter only hid the tooltip when it was present from before.
+    * Fixed #6087, minPointLength shifted next points rendering.
+    * Fixed #6173, another case of unwanted inline CSS in style mode.
+    * Fixed #6187, navigator jumped back after dragging on touch devices.
+    * Fixed #6254, Point.update did not apply new class names.
+    * Fixed #6264, enabling individual bubble markers did not work.
+    * Fixed #6272, inverted stack area chart was badly drawn when containing nulls.
+    * Fixed #6274, allowDecimals: false was ignored with flat data.
+    * Fixed #6278, missing ticks before DST crossover in some cases.
+    * Fixed #6282, text-align did not take effect on data labels with useHTML.
+    * Fixed #6291, multiple responsive rules were applied an unapplied in wrong order when resizing.
+    * Fixed #6301, legend width option caused wrong alignment when aligned right.
+    * Fixed #6305, accessible keyboard navigation in polar charts not working correctly.
+    * Fixed #6314, treemap series failed with error in styled mode.
+    * Fixed #6321, bubbles were hidden when close and marker.enabled set to null.
+    * Fixed #6322, legend navigation arrows did not update correctly on responsiveness.
+    * Fixed #6328, issue with disabled tooltip in accessibility module.
+    * Fixed #6330, minor ticks affecting the computed extremes of Y axes in some cases.
+    * Fixed #6330, minor ticks were not applied outside major ticks on a logarithmic axis.
+    * Fixed #6347, error on applying responsive rules where series or axis length was greater than the existing chart.
+    * Fixed #6356, legend.maxHeight not respected after chart update.
+    * Fixed #6361, accessibility failing for IE8 and older.
+    * Fixed #6370, category axis with breaks was rendered incorrectly.
+    * Fixed #6384, Point.update didn't work with slice: false.
+    * Fixed #6387, graph and area rendered differently on area splines next to null points.
+    * Fixed #6399, treemap legend item had incorrect color after point was hidden.
+    * Fixed #6401, point.states didn't work for  maps.
+    * Fixed #6402, treemap ignoreHiddenPoint is now true by default.
+
 # 5.0.7 / 2017-01-25
 
 * Updated Highcharts to 5.0.7 (2017-01-17)

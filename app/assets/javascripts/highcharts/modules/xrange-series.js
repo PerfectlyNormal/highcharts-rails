@@ -1,13 +1,14 @@
 /**
- * @license Highcharts JS v5.0.7 (2017-01-17)
+ * @license Highcharts JS v5.0.10 (2017-04-10)
  * X-range series
  *
- * (c) 2010-2016 Torstein Honsi, Lars A. V. Cabrera
+ * (c) 2010-2017 Torstein Honsi, Lars A. V. Cabrera
  *
  * --- WORK IN PROGRESS ---
  *
  * License: www.highcharts.com/license
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -17,12 +18,11 @@
 }(function(Highcharts) {
     (function(H) {
         /**
-         * (c) 2014-2016 Highsoft AS
+         * (c) 2014-2017 Highsoft AS
          * Authors: Torstein Honsi, Lars A. V. Cabrera
          *
          * License: www.highcharts.com/license
          */
-        'use strict';
 
         var defaultPlotOptions = H.getOptions().plotOptions,
             color = H.Color,
@@ -219,28 +219,6 @@
                             }
                         }
 
-
-                        // Presentational
-                        point.graphicOriginal
-                            .attr(series.pointAttribs(point, state))
-                            .shadow(options.shadow, null, cutOff);
-                        if (partShapeArgs) {
-                            // Ensure pfOptions is an object
-                            if (!isObject(pfOptions)) {
-                                pfOptions = {};
-                            }
-                            if (isObject(seriesOpts.partialFill)) {
-                                pfOptions = merge(pfOptions, seriesOpts.partialFill);
-                            }
-
-                            fill = pfOptions.fill ||
-                                color(series.color).brighten(-0.3).get('rgb');
-                            point.graphicOverlay
-                                .attr(series.pointAttribs(point, state))
-                                .attr('fill', fill)
-                                .attr('stroke-width', 0)
-                                .shadow(options.shadow, null, cutOff);
-                        }
 
 
                     } else if (graphic) {

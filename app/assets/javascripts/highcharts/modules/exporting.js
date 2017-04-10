@@ -1,11 +1,12 @@
 /**
- * @license Highcharts JS v5.0.7 (2017-01-17)
+ * @license Highcharts JS v5.0.10 (2017-04-10)
  * Exporting module
  *
- * (c) 2010-2016 Torstein Honsi
+ * (c) 2010-2017 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -17,13 +18,12 @@
         /**
          * Exporting module
          *
-         * (c) 2010-2016 Torstein Honsi
+         * (c) 2010-2017 Torstein Honsi
          *
          * License: www.highcharts.com/license
          */
 
         /* eslint indent:0 */
-        'use strict';
 
         // create shortcuts
         var defaultOptions = H.defaultOptions,
@@ -72,36 +72,6 @@
             }
         };
 
-
-        // Presentational attributes
-        merge(true, defaultOptions.navigation, {
-            menuStyle: {
-                border: '1px solid #999999',
-                background: '#ffffff',
-                padding: '5px 0'
-            },
-            menuItemStyle: {
-                padding: '0.5em 1em',
-                background: 'none',
-                color: '#333333',
-                fontSize: isTouchDevice ? '14px' : '11px',
-                transition: 'background 250ms, color 250ms'
-            },
-            menuItemHoverStyle: {
-                background: '#335cad',
-                color: '#ffffff'
-            },
-            buttonOptions: {
-                symbolFill: '#666666',
-                symbolStroke: '#666666',
-                symbolStrokeWidth: 3,
-                theme: {
-                    fill: '#ffffff', // capture hover
-                    stroke: 'none',
-                    padding: 5
-                }
-            }
-        });
 
 
 
@@ -159,15 +129,26 @@
                         /*
                         ,{
 
-                        	text: 'View SVG',
+                        	text: 'View SVG Image',
                         	onclick: function () {
-                        		var svg = this.getSVG()
+                        		var div = doc.createElement('div');
+                        		div.innerHTML = this.getSVGForExport();
+
+                        		this.renderTo.parentNode.appendChild(div);
+                        	}
+                        }, {
+
+                        	text: 'View SVG Source',
+                        	onclick: function () {
+                        		var pre = doc.createElement('pre');
+                        		pre.innerHTML = this.getSVGForExport()
                         			.replace(/</g, '\n&lt;')
                         			.replace(/>/g, '&gt;');
 
-                        		doc.body.innerHTML = '<pre>' + svg + '</pre>';
+                        		this.renderTo.parentNode.appendChild(pre);
                         	}
-                        } // */
+                        }
+                        // */
                     ]
                 }
             }
@@ -213,7 +194,7 @@
                 // Move HTML into a foreignObject
                 if (options && options.exporting && options.exporting.allowHTML) {
                     var html = svg.match(/<\/svg>(.*?$)/);
-                    if (html) {
+                    if (html && html[1]) {
                         html = '<foreignObject x="0" y="0" ' +
                             'width="' + options.chart.width + '" ' +
                             'height="' + options.chart.height + '">' +
@@ -244,25 +225,10 @@
                     	return s2 +'.'+ s3[0];
                     })*/
 
-                // Replace HTML entities, issue #347
-                .replace(/&nbsp;/g, '\u00A0') // no-break space
+                    // Replace HTML entities, issue #347
+                    .replace(/&nbsp;/g, '\u00A0') // no-break space
                     .replace(/&shy;/g, '\u00AD'); // soft hyphen
 
-
-                // IE specific
-                svg = svg
-                    .replace(/<IMG /g, '<image ')
-                    .replace(/<(\/?)TITLE>/g, '<$1title>')
-                    .replace(/height=([^" ]+)/g, 'height="$1"')
-                    .replace(/width=([^" ]+)/g, 'width="$1"')
-                    .replace(/hc-svg-href="([^"]+)">/g, 'xlink:href="$1"/>')
-                    .replace(/ id=([^" >]+)/g, ' id="$1"') // #4003
-                    .replace(/class=([^" >]+)/g, 'class="$1"')
-                    .replace(/ transform /g, ' ')
-                    .replace(/:(path|rect)/g, '$1')
-                    .replace(/style="([^"]+)"/g, function(s) {
-                        return s.toLowerCase();
-                    });
 
 
                 return svg;
@@ -272,6 +238,8 @@
              * Return innerHTML of chart. Used as hook for plugins.
              */
             getChartHTML: function() {
+
+                this.inlineStyles();
 
                 return this.container.innerHTML;
             },
@@ -354,7 +322,9 @@
 
                 // Assign an internal key to ensure a one-to-one mapping (#5924)
                 each(chart.axes, function(axis) {
-                    axis.userOptions.internalKey = H.uniqueKey();
+                    if (!axis.userOptions.internalKey) { // #6444
+                        axis.userOptions.internalKey = H.uniqueKey();
+                    }
                 });
 
                 // generate the chart copy
@@ -532,8 +502,7 @@
                     menuPadding = Math.max(width, height), // for mouse leave detection
                     innerMenu,
                     hide,
-                    menuStyle,
-                    removeMouseUp;
+                    menuStyle;
 
                 // create the menu only the first time
                 if (!menu) {
@@ -552,13 +521,6 @@
                     }, null, menu);
 
 
-                    // Presentational CSS
-                    css(innerMenu, extend({
-                        MozBoxShadow: '3px 3px 10px #888',
-                        WebkitBoxShadow: '3px 3px 10px #888',
-                        boxShadow: '3px 3px 10px #888'
-                    }, navOptions.menuStyle));
-
 
                     // hide on mouse out
                     hide = function() {
@@ -572,23 +534,22 @@
                     };
 
                     // Hide the menu some time after mouse leave (#1357)
-                    addEvent(menu, 'mouseleave', function() {
-                        menu.hideTimer = setTimeout(hide, 500);
-                    });
-                    addEvent(menu, 'mouseenter', function() {
-                        clearTimeout(menu.hideTimer);
-                    });
+                    chart.exportEvents.push(
+                        addEvent(menu, 'mouseleave', function() {
+                            menu.hideTimer = setTimeout(hide, 500);
+                        }),
+                        addEvent(menu, 'mouseenter', function() {
+                            clearTimeout(menu.hideTimer);
+                        }),
 
-
-                    // Hide it on clicking or touching outside the menu (#2258, #2335,
-                    // #2407)
-                    removeMouseUp = addEvent(doc, 'mouseup', function(e) {
-                        if (!chart.pointer.inClass(e.target, className)) {
-                            hide();
-                        }
-                    });
-                    addEvent(chart, 'destroy', removeMouseUp);
-
+                        // Hide it on clicking or touching outside the menu (#2258, #2335,
+                        // #2407)
+                        addEvent(doc, 'mouseup', function(e) {
+                            if (!chart.pointer.inClass(e.target, className)) {
+                                hide();
+                            }
+                        })
+                    );
 
                     // create the items
                     each(items, function(item) {
@@ -613,16 +574,6 @@
                                     innerHTML: item.text || chart.options.lang[item.textKey]
                                 }, null, innerMenu);
 
-
-                                element.onmouseover = function() {
-                                    css(this, navOptions.menuItemHoverStyle);
-                                };
-                                element.onmouseout = function() {
-                                    css(this, navOptions.menuItemStyle);
-                                };
-                                css(element, extend({
-                                    cursor: 'pointer'
-                                }, navOptions.menuItemStyle));
 
                             }
 
@@ -731,8 +682,6 @@
                     .addClass(options.className)
                     .attr({
 
-                        'stroke-linecap': 'round',
-
                         title: chart.options.lang[btnOptions._titleKey],
                         zIndex: 3 // #4955
                     });
@@ -751,12 +700,6 @@
                             zIndex: 1
                         }).add(button);
 
-
-                    symbol.attr({
-                        stroke: btnOptions.symbolStroke,
-                        fill: btnOptions.symbolFill,
-                        'stroke-width': btnOptions.symbolStrokeWidth || 1
-                    });
 
                 }
 
@@ -778,7 +721,9 @@
             destroyExport: function(e) {
                 var chart = e ? e.target : this,
                     exportSVGElements = chart.exportSVGElements,
-                    exportDivElements = chart.exportDivElements;
+                    exportDivElements = chart.exportDivElements,
+                    exportEvents = chart.exportEvents,
+                    cacheName;
 
                 // Destroy the extra buttons added
                 if (exportSVGElements) {
@@ -787,6 +732,12 @@
                         // Destroy and null the svg/vml elements
                         if (elem) { // #1822
                             elem.onclick = elem.ontouchstart = null;
+                            cacheName = 'cache-' + elem.menuClassName;
+
+                            if (chart[cacheName]) {
+                                delete chart[cacheName];
+                            }
+
                             chart.exportSVGElements[i] = elem.destroy();
                         }
                     });
@@ -809,9 +760,155 @@
                     });
                     exportDivElements.length = 0;
                 }
+
+                if (exportEvents) {
+                    each(exportEvents, function(unbind) {
+                        unbind();
+                    });
+                    exportEvents.length = 0;
+                }
             }
         });
 
+
+        // These ones are translated to attributes rather than styles
+        SVGRenderer.prototype.inlineToAttributes = [
+            'fill',
+            'stroke',
+            'strokeLinecap',
+            'strokeLinejoin',
+            'strokeWidth',
+            'textAnchor',
+            'x',
+            'y'
+        ];
+        // These CSS properties are not inlined. Remember camelCase.
+        SVGRenderer.prototype.inlineBlacklist = [
+            /-/, // In Firefox, both hyphened and camelCased names are listed
+            /^(clipPath|cssText|d|height|width)$/, // Full words
+            /^font$/, // more specific props are set
+            /[lL]ogical(Width|Height)$/,
+            /perspective/,
+            /TapHighlightColor/,
+            /^transition/
+            // /^text (border|color|cursor|height|webkitBorder)/
+        ];
+        SVGRenderer.prototype.unstyledElements = [
+            'clipPath',
+            'defs',
+            'desc'
+        ];
+
+        /**
+         * Analyze inherited styles from stylesheets and add them inline
+         *
+         * @todo: What are the border styles for text about? In general, text has a lot of properties.
+         * @todo: Make it work with IE9 and IE10.
+         */
+        Chart.prototype.inlineStyles = function() {
+            var renderer = this.renderer,
+                inlineToAttributes = renderer.inlineToAttributes,
+                blacklist = renderer.inlineBlacklist,
+                unstyledElements = renderer.unstyledElements,
+                defaultStyles = {},
+                dummySVG;
+
+            /**
+             * Make hyphenated property names out of camelCase
+             */
+            function hyphenate(prop) {
+                return prop.replace(
+                    /([A-Z])/g,
+                    function(a, b) {
+                        return '-' + b.toLowerCase();
+                    }
+                );
+            }
+
+            /**
+             * Call this on all elements and recurse to children
+             */
+            function recurse(node) {
+                var prop,
+                    styles,
+                    parentStyles,
+                    cssText = '',
+                    dummy,
+                    styleAttr,
+                    blacklisted,
+                    i;
+
+                if (node.nodeType === 1 && unstyledElements.indexOf(node.nodeName) === -1) {
+                    styles = win.getComputedStyle(node, null);
+                    parentStyles = node.nodeName === 'svg' ? {} : win.getComputedStyle(node.parentNode, null);
+
+                    // Get default styles from the browser so that we don't have to add these
+                    if (!defaultStyles[node.nodeName]) {
+                        if (!dummySVG) {
+                            dummySVG = doc.createElementNS(H.SVG_NS, 'svg');
+                            dummySVG.setAttribute('version', '1.1');
+                            doc.body.appendChild(dummySVG);
+                        }
+                        dummy = doc.createElementNS(node.namespaceURI, node.nodeName);
+                        dummySVG.appendChild(dummy);
+                        defaultStyles[node.nodeName] = merge(win.getComputedStyle(dummy, null)); // Copy, so we can remove the node
+                        dummySVG.removeChild(dummy);
+                    }
+
+                    // Loop over all the computed styles and check whether they are in the 
+                    // white list for styles or atttributes.
+                    for (prop in styles) {
+
+                        // Check against blacklist
+                        blacklisted = false;
+                        i = blacklist.length;
+                        while (i-- && !blacklisted) {
+                            blacklisted = blacklist[i].test(prop) || typeof styles[prop] === 'function';
+                        }
+
+                        if (!blacklisted) {
+
+                            // If parent node has the same style, it gets inherited, no need to inline it
+                            if (parentStyles[prop] !== styles[prop] && defaultStyles[node.nodeName][prop] !== styles[prop]) {
+
+                                // Attributes
+                                if (inlineToAttributes.indexOf(prop) !== -1) {
+                                    node.setAttribute(hyphenate(prop), styles[prop]);
+
+                                    // Styles
+                                } else {
+                                    cssText += hyphenate(prop) + ':' + styles[prop] + ';';
+                                }
+                            }
+                        }
+                    }
+
+                    // Apply styles
+                    if (cssText) {
+                        styleAttr = node.getAttribute('style');
+                        node.setAttribute('style', (styleAttr ? styleAttr + ';' : '') + cssText);
+                    }
+
+                    if (node.nodeName === 'text') {
+                        return;
+                    }
+
+                    // Recurse
+                    each(node.children || node.childNodes, recurse);
+                }
+            }
+
+            /**
+             * Remove the dummy objects used to get defaults
+             */
+            function tearDown() {
+                dummySVG.parentNode.removeChild(dummySVG);
+            }
+
+            recurse(this.container.querySelector('svg'));
+            tearDown();
+
+        };
 
 
 
@@ -840,6 +937,7 @@
             }
 
             if (isDirty && exportingOptions.enabled !== false) {
+                this.exportEvents = [];
 
                 for (n in buttons) {
                     this.addButton(buttons[n]);
@@ -876,6 +974,21 @@
                     }
                 };
             });
+
+            // Uncomment this to see a button directly below the chart, for quick
+            // testing of export
+            /*
+            if (!chart.renderer.forExport) {
+            	var button = doc.createElement('button');
+            	button.innerHTML = 'View exported SVG';
+            	chart.renderTo.parentNode.appendChild(button);
+            	button.onclick = function () {
+            		var div = doc.createElement('div');
+            		div.innerHTML = chart.getSVGForExport();
+            		chart.renderTo.parentNode.appendChild(div);
+            	};
+            }
+            // */
         });
 
     }(Highcharts));
