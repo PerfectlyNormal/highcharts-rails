@@ -1,3 +1,6 @@
+# 6.0.2 (2017-11-09)
+* Updated Highcharts to 6.0.2(2017-10-20)
+  * Added export CSV js
 # 5.0.7 / 2017-01-25
 
 * Updated Highcharts to 5.0.7 (2017-01-17)
