@@ -1,3 +1,10 @@
+# 6.0.1 / 2017-11-10
+
+* Update Highcharts to 6.0.1 (2017-10-05)
+  * Bug fixes
+    * Fixed #7223, regression in v6 causing stock charts and certain features to crash in IE.
+    * Fixed #7228, regression in v6 causing columns with only negative values not to render.
+
 # 6.0.0 / 2017-11-10
 
 * Updated Highcharts to 6.0.0 (2017-10-04)
