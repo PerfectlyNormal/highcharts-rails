@@ -57,10 +57,10 @@ The gem itself is released under the MIT license
 
 ## Signing
 
-Release tags and all released gems (from 3.0.0 onwards) is signed using [rubygems-openpgp](https://www.rubygems-openpgp-ca.org/) using [my personal key](https://eastblue.org/blag/contact/), and the fingerprint is also included below.
+Release tags and all released gems (from 3.0.0 onwards) is signed using [rubygems-openpgp](https://www.rubygems-openpgp-ca.org/) using [my personal key](https://eastblue.org/blag/2013/gpg.html), and the fingerprint is also included below.
 
-    pub   4096R/CCFBB9EF 2013-02-01 [expires: 2017-02-01]
-          Key fingerprint = 6077 34FC 32B6 6041 BF06  43F2 205D 9784 CCFB B9EF
-    uid                  Per Christian Bechström Viken <perchr@northblue.org>
-    uid                  [jpeg image of size 6240]
-    sub   4096R/13C6EED7 2013-02-01 [expires: 2017-02-01]
+    pub   4096R/C9A283C9 2017-11-10 [expires: 2021-11-10]
+          Key fingerprint = 18C6 2780 9B69 5EAC 0183  69B1 DD27 0F98 C9A2 83C9
+    uid       Per Christian Bechström Viken <perchr@northblue.org>
+    uid       [jpeg image of size 9212]
+    sub   4096R/AFA535FE 2017-11-10 [expires: 2021-11-10]
