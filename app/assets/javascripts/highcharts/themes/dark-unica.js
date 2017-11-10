@@ -1,10 +1,11 @@
 /**
- * @license Highcharts JS v5.0.0 (2016-09-29)
+ * @license Highcharts JS v6.0.0 (2017-10-04)
  *
- * (c) 2009-2016 Torstein Honsi
+ * (c) 2009-2017 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -14,7 +15,7 @@
 }(function(Highcharts) {
     (function(Highcharts) {
         /**
-         * (c) 2010-2016 Torstein Honsi
+         * (c) 2010-2017 Torstein Honsi
          *
          * License: www.highcharts.com/license
          * 
@@ -22,7 +23,6 @@
          * @author Torstein Honsi
          */
 
-        'use strict';
         /* global document */
         // Load the fonts
         Highcharts.createElement('link', {
@@ -32,8 +32,8 @@
         }, null, document.getElementsByTagName('head')[0]);
 
         Highcharts.theme = {
-            colors: ['#2b908f', '#90ee7e', '#f45b5b', '#7798BF', '#aaeeee', '#ff0066', '#eeaaee',
-                '#55BF3B', '#DF5353', '#7798BF', '#aaeeee'
+            colors: ['#2b908f', '#90ee7e', '#f45b5b', '#7798BF', '#aaeeee', '#ff0066',
+                '#eeaaee', '#55BF3B', '#DF5353', '#7798BF', '#aaeeee'
             ],
             chart: {
                 backgroundColor: {

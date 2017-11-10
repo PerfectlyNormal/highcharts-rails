@@ -1,10 +1,11 @@
 /**
- * @license Highcharts JS v5.0.0 (2016-09-29)
+ * @license Highcharts JS v6.0.0 (2017-10-04)
  *
- * (c) 2009-2016 Torstein Honsi
+ * (c) 2009-2017 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
+'use strict';
 (function(factory) {
     if (typeof module === 'object' && module.exports) {
         module.exports = factory;
@@ -14,17 +15,16 @@
 }(function(Highcharts) {
     (function(Highcharts) {
         /**
-         * (c) 2010-2016 Torstein Honsi
+         * (c) 2010-2017 Torstein Honsi
          *
          * License: www.highcharts.com/license
          *
          * Dark blue theme for Highcharts JS
          * @author Torstein Honsi
          */
-        'use strict';
         Highcharts.theme = {
-            colors: ['#DDDF0D', '#55BF3B', '#DF5353', '#7798BF', '#aaeeee', '#ff0066', '#eeaaee',
-                '#55BF3B', '#DF5353', '#7798BF', '#aaeeee'
+            colors: ['#DDDF0D', '#55BF3B', '#DF5353', '#7798BF', '#aaeeee',
+                '#ff0066', '#eeaaee', '#55BF3B', '#DF5353', '#7798BF', '#aaeeee'
             ],
             chart: {
                 backgroundColor: {
