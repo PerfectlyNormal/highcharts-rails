@@ -1,3 +1,10 @@
+# 5.0.14 / 2017-11-10
+
+* Updated Highcharts to 5.0.14 (2017-07-28)
+  * Bug fixes
+    * Fixed #7014, a regression causing JS error when writing a new chart to a node that was originally detached.
+    * Fixed JS error on inverted, bosted charts.
+
 # 5.0.13 / 2017-11-10
 
 * Updated Highcharts to 5.0.13 (2017-07-27)
