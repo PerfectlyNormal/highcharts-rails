@@ -10,6 +10,7 @@ Gem::Specification.new do |s|
   s.homepage    = "http://northblue.org/"
   s.summary     = %q{Gem for easily adding Highcharts to the Rails Asset Pipeline}
   s.description = %q{Gem that includes Highcharts (Interactive JavaScript charts for your web projects), in the Rails Asset Pipeline introduced in Rails 3.1}
+  s.licenses = ['MIT', 'CC BY-NC 3.0', 'Highsoft_Standard-License-Agreement-9.0']
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
