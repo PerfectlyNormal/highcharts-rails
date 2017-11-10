@@ -1,3 +1,8 @@
+# 5.0.9 / 2017-11-10
+
+* Updated Highcharts to 5.0.9 (2017-03-08)
+  * Worked around a Closure Compiler error that made 3D charts fail.
+
 # 5.0.8 / 2017-11-10
 
 * Updated Highcharts to 5.0.8 (2017-03-08)
