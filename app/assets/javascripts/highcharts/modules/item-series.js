@@ -1,40 +1,57 @@
 /**
- * @license  Highcharts JS v6.0.3 (2017-11-14)
+ * @license  Highcharts JS v7.0.3 (2019-02-06)
  *
  * Item series type for Highcharts
  *
- * (c) 2010-2017 Torstein Honsi
+ * (c) 2010-2019 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
 'use strict';
-(function(factory) {
+(function (factory) {
     if (typeof module === 'object' && module.exports) {
+        factory['default'] = factory;
         module.exports = factory;
+    } else if (typeof define === 'function' && define.amd) {
+        define(function () {
+            return factory;
+        });
     } else {
-        factory(Highcharts);
+        factory(typeof Highcharts !== 'undefined' ? Highcharts : undefined);
     }
-}(function(Highcharts) {
-    (function(H) {
-        /**
-         * (c) 2009-2017 Torstein Honsi
+}(function (Highcharts) {
+    (function (H) {
+        /* *
          *
-         * Item series type for Highcharts
+         *  (c) 2009-2019 Torstein Honsi
          *
-         * License: www.highcharts.com/license
-         */
+         *  Item series type for Highcharts
+         *
+         *  License: www.highcharts.com/license
+         *
+         * */
 
         /**
+         * @private
          * @todo
          * - Check update, remove etc.
          * - Custom icons like persons, carts etc. Either as images, font icons or
          *   Highcharts symbols.
          */
-        var each = H.each,
-            extend = H.extend,
+
+
+
+        var extend = H.extend,
             pick = H.pick,
             seriesType = H.seriesType;
 
+        /**
+         * @private
+         * @class
+         * @name Highcharts.seriesTypes.item
+         *
+         * @augments Highcharts.Series
+         */
         seriesType('item', 'column', {
             itemPadding: 0.2,
             marker: {
@@ -45,12 +62,16 @@
                 }
             }
         }, {
-            drawPoints: function() {
+            drawPoints: function () {
                 var series = this,
                     renderer = series.chart.renderer,
-                    seriesMarkerOptions = this.options.marker;
+                    seriesMarkerOptions = this.options.marker,
+                    itemPaddingTranslated = this.yAxis.transA *
+                        series.options.itemPadding,
+                    borderWidth = this.borderWidth,
+                    crisp = borderWidth % 2 ? 0.5 : 1;
 
-                each(this.points, function(point) {
+                this.points.forEach(function (point) {
                     var yPos,
                         attr,
                         graphics,
@@ -61,8 +82,15 @@
                             pointMarkerOptions.symbol ||
                             seriesMarkerOptions.symbol
                         ),
+                        radius = pick(
+                            pointMarkerOptions.radius,
+                            seriesMarkerOptions.radius
+                        ),
                         size,
-                        yTop;
+                        yTop,
+                        isSquare = symbol !== 'rect',
+                        x,
+                        y;
 
                     point.graphics = graphics = point.graphics || {};
                     pointAttr = point.pointAttr ?
@@ -72,6 +100,11 @@
                         ) :
                         series.pointAttribs(point, point.selected && 'select');
                     delete pointAttr.r;
+
+                    if (series.chart.styledMode) {
+                        delete pointAttr.stroke;
+                        delete pointAttr['stroke-width'];
+                    }
 
                     if (point.y !== null) {
 
@@ -83,18 +116,28 @@
                         yTop = pick(point.stackY, point.y);
                         size = Math.min(
                             point.pointWidth,
-                            (
-                                series.yAxis.transA *
-                                (1 - series.options.itemPadding)
-                            )
+                            series.yAxis.transA - itemPaddingTranslated
                         );
                         for (yPos = yTop; yPos > yTop - point.y; yPos--) {
 
+                            x = point.barX + (
+                                isSquare ?
+                                    point.pointWidth / 2 - size / 2 :
+                                    0
+                            );
+                            y = series.yAxis.toPixels(yPos, true) +
+                                itemPaddingTranslated / 2;
+
+                            if (series.options.crisp) {
+                                x = Math.round(x) - crisp;
+                                y = Math.round(y) + crisp;
+                            }
                             attr = {
-                                x: point.barX + point.pointWidth / 2 - size / 2,
-                                y: series.yAxis.toPixels(yPos, true) - size / 2,
-                                width: size,
-                                height: size
+                                x: x,
+                                y: y,
+                                width: Math.round(isSquare ? size : point.pointWidth),
+                                height: Math.round(size),
+                                r: radius
                             };
 
                             if (graphics[itemY]) {
@@ -108,7 +151,7 @@
                             itemY--;
                         }
                     }
-                    H.objectEach(graphics, function(graphic, key) {
+                    H.objectEach(graphics, function (graphic, key) {
                         if (!graphic.isActive) {
                             graphic.destroy();
                             delete graphic[key];
@@ -121,6 +164,13 @@
             }
         });
 
+        H.SVGRenderer.prototype.symbols.rect = function (x, y, w, h, options) {
+            return H.SVGRenderer.prototype.symbols.callout(x, y, w, h, options);
+        };
 
     }(Highcharts));
+    return (function () {
+
+
+    }());
 }));
