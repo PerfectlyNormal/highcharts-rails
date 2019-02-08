@@ -1,22 +1,27 @@
 /**
- * @license Highcharts JS v6.0.3 (2017-11-14)
+ * @license Highcharts JS v7.0.3 (2019-02-06)
  * Drag-panes module
  *
- * (c) 2010-2017 Highsoft AS
+ * (c) 2010-2019 Highsoft AS
  * Author: Kacper Madej
  *
  * License: www.highcharts.com/license
  */
 'use strict';
-(function(factory) {
+(function (factory) {
     if (typeof module === 'object' && module.exports) {
+        factory['default'] = factory;
         module.exports = factory;
+    } else if (typeof define === 'function' && define.amd) {
+        define(function () {
+            return factory;
+        });
     } else {
-        factory(Highcharts);
+        factory(typeof Highcharts !== 'undefined' ? Highcharts : undefined);
     }
-}(function(Highcharts) {
-    (function(H) {
-        /**
+}(function (Highcharts) {
+    (function (H) {
+        /* *
          * Plugin for resizing axes / panes in a chart.
          *
          * (c) 2010-2017 Highsoft AS
@@ -25,10 +30,11 @@
          * License: www.highcharts.com/license
          */
 
+
+
         var hasTouch = H.hasTouch,
             merge = H.merge,
             wrap = H.wrap,
-            each = H.each,
             isNumber = H.isNumber,
             addEvent = H.addEvent,
             relativeLength = H.relativeLength,
@@ -36,9 +42,7 @@
             Axis = H.Axis,
             Pointer = H.Pointer,
 
-            /**
-             * Default options for AxisResizer.
-             */
+            // Default options for AxisResizer.
             resizerOptions = {
                 /**
                  * Minimal size of a resizable axis. Could be set as a percent
@@ -46,11 +50,10 @@
                  *
                  * This feature requires the `drag-panes.js` module.
                  *
-                 * @product highstock
-                 * @default 10%
-                 *
-                 * @type {Number|String}
-                 * @sample {highstock} stock/yaxis/resize-min-max-length minLength and maxLength
+                 * @type      {Number|String}
+                 * @product   highstock
+                 * @sample    {highstock} stock/yaxis/resize-min-max-length
+                 *            minLength and maxLength
                  * @apioption yAxis.minLength
                  */
                 minLength: '10%',
@@ -61,21 +64,23 @@
                  *
                  * This feature requires the `drag-panes.js` module.
                  *
-                 * @product highstock
-                 * @default 100%
-                 *
-                 * @type {String|Number}
-                 * @sample {highstock} stock/yaxis/resize-min-max-length minLength and maxLength
+                 * @type      {String|Number}
+                 * @product   highstock
+                 * @sample    {highstock} stock/yaxis/resize-min-max-length
+                 *            minLength and maxLength
                  * @apioption yAxis.maxLength
                  */
                 maxLength: '100%',
 
                 /**
-                 * Options for axis resizing for Drag Panes module.
-                 *
-                 * This feature requires the `drag-panes.js` module.
+                 * Options for axis resizing. This feature requires the
+                 * [drag-panes.js](http://code.highcharts.com/stock/modules/drag-panes.js)
+                 * module. It adds a thick line between panes which the user can drag
+                 * in order to resize the panes.
                  *
                  * @product highstock
+                 * @sample    {highstock} stock/demo/candlestick-and-volume
+                 *          Axis resizing enabled
                  * @optionparent yAxis.resize
                  */
                 resize: {
@@ -95,10 +100,12 @@
                          *
                          * This feature requires the `drag-panes.js` module.
                          *
-                         * @type {Array.<String|Number>}
+                         * @type    {Array<String|Number>}
                          * @default []
-                         * @sample {highstock} stock/yaxis/multiple-resizers Three panes with resizers
-                         * @sample {highstock} stock/yaxis/resize-multiple-axes One resizer controlling multiple axes
+                         * @sample  {highstock} stock/yaxis/multiple-resizers
+                         *          Three panes with resizers
+                         * @sample  {highstock} stock/yaxis/resize-multiple-axes
+                         *          One resizer controlling multiple axes
                          */
                         next: [],
 
@@ -108,10 +115,11 @@
                          *
                          * This feature requires the `drag-panes.js` module.
                          *
-                         * @type {Array.<String|Number>}
-                         * @default []
-                         * @sample {highstock} stock/yaxis/multiple-resizers Three panes with resizers
-                         * @sample {highstock} stock/yaxis/resize-multiple-axes One resizer controlling multiple axes
+                         * @type    {Array<String|Number>}
+                         * @sample  {highstock} stock/yaxis/multiple-resizers
+                         *          Three panes with resizers
+                         * @sample  {highstock} stock/yaxis/resize-multiple-axes
+                         *          One resizer controlling multiple axes
                          */
                         prev: []
                     },
@@ -121,11 +129,10 @@
                      *
                      * This feature requires the `drag-panes.js` module.
                      *
-                     * @sample {highstock} stock/demo/candlestick-and-volume Enabled resizer
+                     * @sample {highstock} stock/demo/candlestick-and-volume
+                     *         Enabled resizer
                      */
                     enabled: false,
-
-
 
                     /**
                      * Cursor style for the control line.
@@ -143,7 +150,7 @@
                      *
                      * This feature requires the `drag-panes.js` module.
                      *
-                     * @type {Color}
+                     * @type   {Color}
                      * @sample {highstock} stock/yaxis/styled-resizer Styled resizer
                      */
                     lineColor: '#cccccc',
@@ -155,10 +162,9 @@
                      *
                      * This feature requires the `drag-panes.js` module.
                      *
-                     * @default Solid
                      * @sample {highstock} stock/yaxis/styled-resizer Styled resizer
-                     * @see For supported options check
-                     * [dashStyle](#plotOptions.series.dashStyle)
+                     * @see    For supported options check
+                     *         [dashStyle](#plotOptions.series.dashStyle)
                      */
                     lineDashStyle: 'Solid',
 
@@ -172,8 +178,6 @@
                      * @sample {highstock} stock/yaxis/styled-resizer Styled resizer
                      */
                     lineWidth: 4,
-
-
 
                     /**
                      * Horizontal offset of the control line.
@@ -194,23 +198,33 @@
                     y: 0
                 }
             };
+
         merge(true, Axis.prototype.defaultYAxisOptions, resizerOptions);
 
         /**
          * The AxisResizer class.
-         * @param {Object} axis - main axis for the AxisResizer.
+         *
+         * @private
          * @class
+         * @name Highcharts.AxisResizer
+         *
+         * @param {Highcharts.Axis} axis
+         *        Main axis for the AxisResizer.
          */
-        H.AxisResizer = function(axis) {
+        H.AxisResizer = function (axis) {
             this.init(axis);
         };
 
         H.AxisResizer.prototype = {
             /**
-             * Initiate the AxisResizer object.
-             * @param {Object} axis - main axis for the AxisResizer.
+             * Initialize the AxisResizer object.
+             *
+             * @function Highcharts.AxisResizer#init
+             *
+             * @param {Highcharts.Axis} axis
+             *        Main axis for the AxisResizer.
              */
-            init: function(axis, update) {
+            init: function (axis, update) {
                 this.axis = axis;
                 this.options = axis.options.resize;
                 this.render();
@@ -223,8 +237,10 @@
 
             /**
              * Render the AxisResizer
+             *
+             * @function Highcharts.AxisResizer#render
              */
-            render: function() {
+            render: function () {
                 var resizer = this,
                     axis = resizer.axis,
                     chart = axis.chart,
@@ -242,14 +258,14 @@
                     attr = {},
                     lineWidth;
 
-
-                attr = {
-                    cursor: options.cursor,
-                    stroke: options.lineColor,
-                    'stroke-width': options.lineWidth,
-                    dashstyle: options.lineDashStyle
-                };
-
+                if (!chart.styledMode) {
+                    attr = {
+                        cursor: options.cursor,
+                        stroke: options.lineColor,
+                        'stroke-width': options.lineWidth,
+                        dashstyle: options.lineDashStyle
+                    };
+                }
 
                 // Register current position for future reference.
                 resizer.lastPos = pos - y;
@@ -260,11 +276,12 @@
                 }
 
                 // Add to axisGroup after axis update, because the group is recreated
-
+                // Do .add() before path is calculated because strokeWidth() needs it.
                 resizer.controlLine.add(axis.axisGroup);
 
-
-                lineWidth = options.lineWidth;
+                lineWidth = chart.styledMode ?
+                    resizer.controlLine.strokeWidth() :
+                    options.lineWidth;
 
                 attr.d = chart.renderer.crispLine(
                     [
@@ -279,8 +296,10 @@
 
             /**
              * Set up the mouse and touch events for the control line.
+             *
+             * @function Highcharts.AxisResizer#addMouseEvents
              */
-            addMouseEvents: function() {
+            addMouseEvents: function () {
                 var resizer = this,
                     ctrlLineElem = resizer.controlLine.element,
                     container = resizer.axis.chart.container,
@@ -293,20 +312,20 @@
                  * Create mouse events' handlers.
                  * Make them as separate functions to enable wrapping them:
                  */
-                resizer.mouseMoveHandler = mouseMoveHandler = function(e) {
+                resizer.mouseMoveHandler = mouseMoveHandler = function (e) {
                     resizer.onMouseMove(e);
                 };
-                resizer.mouseUpHandler = mouseUpHandler = function(e) {
+                resizer.mouseUpHandler = mouseUpHandler = function (e) {
                     resizer.onMouseUp(e);
                 };
-                resizer.mouseDownHandler = mouseDownHandler = function(e) {
+                resizer.mouseDownHandler = mouseDownHandler = function (e) {
                     resizer.onMouseDown(e);
                 };
 
                 /**
                  * Add mouse move and mouseup events. These are bind to doc/container,
                  * because resizer.grabbed flag is stored in mousedown events.
-                 */
+                */
                 eventsToUnbind.push(
                     addEvent(container, 'mousemove', mouseMoveHandler),
                     addEvent(container.ownerDocument, 'mouseup', mouseUpHandler),
@@ -327,9 +346,13 @@
 
             /**
              * Mouse move event based on x/y mouse position.
-             * @param {Object} e  - mouse event.
+             *
+             * @function Highcharts.AxisResizer#onMouseMove
+             *
+             * @param {global.PointerEvent} e
+             *        Mouse event.
              */
-            onMouseMove: function(e) {
+            onMouseMove: function (e) {
                 /*
                  * In iOS, a mousemove event with e.pageX === 0 is fired when holding
                  * the finger down in the center of the scrollbar. This should
@@ -347,9 +370,13 @@
 
             /**
              * Mouse up event based on x/y mouse position.
-             * @param {Object} e - mouse event.
+             *
+             * @function Highcharts.AxisResizer#onMouseUp
+             *
+             * @param {global.PointerEvent} e
+             *        Mouse event.
              */
-            onMouseUp: function(e) {
+            onMouseUp: function (e) {
                 if (this.hasDragged) {
                     this.updateAxes(this.axis.chart.pointer.normalize(e).chartY -
                         this.options.y);
@@ -362,8 +389,10 @@
             /**
              * Mousedown on a control line.
              * Will store necessary information for drag&drop.
+             *
+             * @function Highcharts.AxisResizer#onMouseDown
              */
-            onMouseDown: function() {
+            onMouseDown: function () {
                 // Clear all hover effects.
                 this.axis.chart.pointer.reset(false, 0);
 
@@ -373,12 +402,17 @@
 
             /**
              * Update all connected axes after a change of control line position
+             *
+             * @function Highcharts.AxisResizer#updateAxes
+             *
+             * @param {number} chartY
              */
-            updateAxes: function(chartY) {
+            updateAxes: function (chartY) {
                 var resizer = this,
                     chart = resizer.axis.chart,
                     axes = resizer.options.controlledAxis,
-                    nextAxes = axes.next.length === 0 ? [H.inArray(resizer.axis, chart.yAxis) + 1] : axes.next,
+                    nextAxes = axes.next.length === 0 ?
+                        [chart.yAxis.indexOf(resizer.axis) + 1] : axes.next,
                     // Main axis is included in the prev array by default
                     prevAxes = [resizer.axis].concat(axes.prev),
                     axesConfigs = [], // prev and next configs
@@ -387,7 +421,10 @@
                     plotHeight = chart.plotHeight,
                     plotBottom = plotTop + plotHeight,
                     yDelta,
-                    normalize = function(val, min, max) {
+                    calculatePercent = function (value) {
+                        return value * 100 / plotHeight + '%';
+                    },
+                    normalize = function (val, min, max) {
                         return Math.round(Math.min(Math.max(val, min), max));
                     };
 
@@ -402,20 +439,20 @@
                 }
 
                 // First gather info how axes should behave
-                each([prevAxes, nextAxes], function(axesGroup, isNext) {
-                    each(axesGroup, function(axisInfo, i) {
+                [prevAxes, nextAxes].forEach(function (axesGroup, isNext) {
+                    axesGroup.forEach(function (axisInfo, i) {
                         // Axes given as array index, axis object or axis id
                         var axis = isNumber(axisInfo) ?
-                            // If it's a number - it's an index
-                            chart.yAxis[axisInfo] :
-                            (
-                                // If it's first elem. in first group
-                                (!isNext && !i) ?
-                                // then it's an Axis object
-                                axisInfo :
-                                // else it should be an id
-                                chart.get(axisInfo)
-                            ),
+                                // If it's a number - it's an index
+                                chart.yAxis[axisInfo] :
+                                (
+                                    // If it's first elem. in first group
+                                    (!isNext && !i) ?
+                                        // then it's an Axis object
+                                        axisInfo :
+                                        // else it should be an id
+                                        chart.get(axisInfo)
+                                ),
                             axisOptions = axis && axis.options,
                             optionsToUpdate = {},
                             hDelta = 0,
@@ -423,7 +460,11 @@
                             minLength, maxLength;
 
                         // Skip if axis is not found
-                        if (!axisOptions) {
+                        // or it is navigator's yAxis (#7732)
+                        if (
+                            !axisOptions ||
+                            axisOptions.id === 'navigator-y-axis'
+                        ) {
                             return;
                         }
 
@@ -475,8 +516,8 @@
                             axesConfigs.push({
                                 axis: axis,
                                 options: {
-                                    top: Math.round(top),
-                                    height: height
+                                    top: calculatePercent(top - plotTop),
+                                    height: calculatePercent(height)
                                 }
                             });
                         } else {
@@ -493,7 +534,7 @@
                             axesConfigs.push({
                                 axis: axis,
                                 options: {
-                                    height: height
+                                    height: calculatePercent(height)
                                 }
                             });
                         }
@@ -505,7 +546,7 @@
                 // If we hit the min/maxLength with dragging, don't do anything:
                 if (!stopDrag) {
                     // Now update axes:
-                    each(axesConfigs, function(config) {
+                    axesConfigs.forEach(function (config) {
                         config.axis.update(config.options, false);
                     });
 
@@ -516,8 +557,10 @@
             /**
              * Destroy AxisResizer. Clear outside references, clear events,
              * destroy elements, nullify properties.
+             *
+             * @function Highcharts.AxisResizer#destroy
              */
-            destroy: function() {
+            destroy: function () {
                 var resizer = this,
                     axis = resizer.axis;
 
@@ -526,7 +569,7 @@
 
                 // Clear control line events
                 if (this.eventsToUnbind) {
-                    each(this.eventsToUnbind, function(unbind) {
+                    this.eventsToUnbind.forEach(function (unbind) {
                         unbind();
                     });
                 }
@@ -535,7 +578,7 @@
                 resizer.controlLine.destroy();
 
                 // Nullify properties
-                objectEach(resizer, function(val, key) {
+                objectEach(resizer, function (val, key) {
                     resizer[key] = null;
                 });
             }
@@ -545,9 +588,7 @@
         Axis.prototype.keepProps.push('resizer');
 
         // Add new AxisResizer, update or remove it
-        wrap(Axis.prototype, 'render', function(proceed) {
-            proceed.apply(this, Array.prototype.slice.call(arguments, 1));
-
+        addEvent(Axis, 'afterRender', function () {
             var axis = this,
                 resizer = axis.resizer,
                 resizerOptions = axis.options.resize,
@@ -562,7 +603,7 @@
                         // Update options
                         resizer.init(axis, true);
 
-                        // Resizer present, but disabled
+                    // Resizer present, but disabled
                     } else {
                         // Destroy the resizer
                         resizer.destroy();
@@ -579,19 +620,30 @@
         });
 
         // Clear resizer on axis remove.
-        wrap(Axis.prototype, 'destroy', function(proceed, keepEvents) {
-            if (!keepEvents && this.resizer) {
+        addEvent(Axis, 'destroy', function (e) {
+            if (!e.keepEvents && this.resizer) {
                 this.resizer.destroy();
             }
-            proceed.apply(this, Array.prototype.slice.call(arguments, 1));
         });
 
         // Prevent any hover effects while dragging a control line of AxisResizer.
-        wrap(Pointer.prototype, 'runPointActions', function(proceed) {
+        wrap(Pointer.prototype, 'runPointActions', function (proceed) {
+            if (!this.chart.activeResizer) {
+                proceed.apply(this, Array.prototype.slice.call(arguments, 1));
+            }
+        });
+
+        // Prevent default drag action detection while dragging a control line of
+        // AxisResizer. (#7563)
+        wrap(Pointer.prototype, 'drag', function (proceed) {
             if (!this.chart.activeResizer) {
                 proceed.apply(this, Array.prototype.slice.call(arguments, 1));
             }
         });
 
     }(Highcharts));
+    return (function () {
+
+
+    }());
 }));

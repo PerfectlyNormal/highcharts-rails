@@ -1,34 +1,39 @@
 /**
- * @license Highcharts JS v6.0.3 (2017-11-14)
+ * @license Highcharts JS v7.0.3 (2019-02-06)
  * Old IE (v6, v7, v8) module for Highcharts v6+.
  *
- * (c) 2010-2017 Highsoft AS
+ * (c) 2010-2019 Highsoft AS
  * Author: Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
 'use strict';
-(function(factory) {
+(function (factory) {
     if (typeof module === 'object' && module.exports) {
+        factory['default'] = factory;
         module.exports = factory;
+    } else if (typeof define === 'function' && define.amd) {
+        define(function () {
+            return factory;
+        });
     } else {
-        factory(Highcharts);
+        factory(typeof Highcharts !== 'undefined' ? Highcharts : undefined);
     }
-}(function(Highcharts) {
-    (function(H) {
-        /**
-         * (c) 2010-2017 Torstein Honsi
+}(function (Highcharts) {
+    (function (H) {
+        /* *
+         * (c) 2010-2019 Torstein Honsi
          *
-         * Support for old IE browsers (6, 7 and 8) in Highcharts v6+. 
+         * Support for old IE browsers (6, 7 and 8) in Highcharts v6+.
          *
          * License: www.highcharts.com/license
          */
 
-        /* eslint max-len: 0 */
+
+
         var VMLRenderer,
             VMLRendererExtension,
             VMLElement,
-
             Chart = H.Chart,
             createElement = H.createElement,
             css = H.css,
@@ -36,7 +41,6 @@
             deg2rad = H.deg2rad,
             discardElement = H.discardElement,
             doc = H.doc,
-            each = H.each,
             erase = H.erase,
             extend = H.extend,
             extendClass = H.extendClass,
@@ -50,36 +54,27 @@
             svg = H.svg,
             SVGElement = H.SVGElement,
             SVGRenderer = H.SVGRenderer,
-            win = H.win,
-            wrap = H.wrap;
+            win = H.win;
 
 
         /**
          * Path to the pattern image required by VML browsers in order to
          * draw radial gradients.
          *
-         * @type {String}
+         * @type      {string}
+         * @default   http://code.highcharts.com/{version}/gfx/vml-radial-gradient.png
+         * @since     2.3.0
          * @apioption global.VMLRadialGradientURL
-         * @default {highcharts}
-         *          http://code.highcharts.com/{version}/gfx/vml-radial-gradient.png
-         * @default {highstock}
-         *          http://code.highcharts.com/highstock/{version}/gfx/vml-radial-gradient.png
-         * @default {highmaps}
-         *          http://code.highcharts.com/{version}/gfx/vml-radial-gradient.png
-         * @since 2.3.0
          */
         H.getOptions().global.VMLRadialGradientURL =
-            'http://code.highcharts.com/6.0.3/gfx/vml-radial-gradient.png';
+            'http://code.highcharts.com/7.0.3/gfx/vml-radial-gradient.png';
 
 
         // Utilites
         if (doc && !doc.defaultView) {
-            H.getStyle = function(el, prop) {
+            H.getStyle = function (el, prop) {
                 var val,
-                    alias = {
-                        width: 'clientWidth',
-                        height: 'clientHeight'
-                    }[prop];
+                    alias = { width: 'clientWidth', height: 'clientHeight' }[prop];
 
                 if (el.style[prop]) {
                     return H.pInt(el.style[prop]);
@@ -94,13 +89,13 @@
                     return Math.max(el[alias] - 2 * H.getStyle(el, 'padding'), 0);
                 }
 
-                val = el.currentStyle[prop.replace(/\-(\w)/g, function(a, b) {
+                val = el.currentStyle[prop.replace(/\-(\w)/g, function (a, b) {
                     return b.toUpperCase();
                 })];
                 if (prop === 'filter') {
                     val = val.replace(
                         /alpha\(opacity=([0-9]+)\)/,
-                        function(a, b) {
+                        function (a, b) {
                             return b / 100;
                         }
                     );
@@ -110,100 +105,32 @@
             };
         }
 
-        if (!Array.prototype.forEach) {
-            H.forEachPolyfill = function(fn, ctx) {
-                var i = 0,
-                    len = this.length;
-                for (; i < len; i++) {
-                    if (fn.call(ctx, this[i], i, this) === false) {
-                        return i;
-                    }
-                }
-            };
-        }
-
-        if (!Array.prototype.indexOf) {
-            H.indexOfPolyfill = function(arr) {
-                var len,
-                    i = 0;
-
-                if (arr) {
-                    len = arr.length;
-
-                    for (; i < len; i++) {
-                        if (arr[i] === this) {
-                            return i;
-                        }
-                    }
-                }
-
-                return -1;
-            };
-        }
-
-        if (!Array.prototype.filter) {
-            H.filterPolyfill = function(fn) {
-                var ret = [],
-                    i = 0,
-                    length = this.length;
-
-                for (; i < length; i++) {
-                    if (fn(this[i], i)) {
-                        ret.push(this[i]);
-                    }
-                }
-
-                return ret;
-            };
-        }
-
-        if (!Object.prototype.keys) {
-            H.keysPolyfill = function(obj) {
-                var result = [],
-                    hasOwnProperty = Object.prototype.hasOwnProperty,
-                    prop;
-                for (prop in obj) {
-                    if (hasOwnProperty.call(obj, prop)) {
-                        result.push(prop);
-                    }
-                }
-                return result;
-            };
-        }
-
-
-        if (!Array.prototype.reduce) {
-            H.reducePolyfill = function(func, initialValue) {
-                var context = this,
-                    accumulator = initialValue || {},
-                    len = this.length;
-                for (var i = 0; i < len; ++i) {
-                    accumulator = func.call(context, accumulator, this[i], i, this);
-                }
-                return accumulator;
-            };
-        }
-
         if (!svg) {
 
             // Prevent wrapping from creating false offsetWidths in export in legacy IE.
             // This applies only to charts for export, where IE runs the SVGRenderer
             // instead of the VMLRenderer
             // (#1079, #1063)
-            wrap(H.SVGRenderer.prototype, 'text', function(proceed) {
-                return proceed.apply(
-                    this,
-                    Array.prototype.slice.call(arguments, 1)
-                ).css({
-                    position: 'absolute'
-                });
+            H.addEvent(SVGElement, 'afterInit', function () {
+                if (this.element.nodeName === 'text') {
+                    this.css({
+                        position: 'absolute'
+                    });
+                }
             });
 
             /**
              * Old IE override for pointer normalize, adds chartX and chartY to event
              * arguments.
+             *
+             * @ignore
+             * @function Highcharts.Pointer#normalize
+             *
+             * @param {global.Event} e
+             *
+             * @param {boolean} [chartPosition=false]
              */
-            H.Pointer.prototype.normalize = function(e, chartPosition) {
+            H.Pointer.prototype.normalize = function (e, chartPosition) {
 
                 e = e || win.event;
                 if (!e.target) {
@@ -226,8 +153,11 @@
             /**
              * Further sanitize the mock-SVG that is generated when exporting charts in
              * oldIE.
+             *
+             * @private
+             * @function Highcharts.Chart#ieSanitizeSVG
              */
-            Chart.prototype.ieSanitizeSVG = function(svg) {
+            Chart.prototype.ieSanitizeSVG = function (svg) {
                 svg = svg
                     .replace(/<IMG /g, '<image ')
                     .replace(/<(\/?)TITLE>/g, '<$1title>')
@@ -238,17 +168,46 @@
                     .replace(/class=([^" >]+)/g, 'class="$1"')
                     .replace(/ transform /g, ' ')
                     .replace(/:(path|rect)/g, '$1')
-                    .replace(/style="([^"]+)"/g, function(s) {
+                    .replace(/style="([^"]+)"/g, function (s) {
                         return s.toLowerCase();
                     });
 
                 return svg;
             };
 
+            /**
+             * VML namespaces can't be added until after complete. Listening
+             * for Perini's doScroll hack is not enough.
+             *
+             * @private
+             * @function Highcharts.Chart#isReadyToRender
+             */
+            Chart.prototype.isReadyToRender = function () {
+                var chart = this;
+
+                // Note: win == win.top is required
+                if (
+                    !svg &&
+                    (
+                        win == win.top && // eslint-disable-line eqeqeq
+                        doc.readyState !== 'complete'
+                    )
+                ) {
+                    doc.attachEvent('onreadystatechange', function () {
+                        doc.detachEvent('onreadystatechange', chart.firstRender);
+                        if (doc.readyState === 'complete') {
+                            chart.firstRender();
+                        }
+                    });
+                    return false;
+                }
+                return true;
+            };
+
             // IE compatibility hack for generating SVG content that it doesn't really
             // understand. Used by the exporting module.
             if (!doc.createElementNS) {
-                doc.createElementNS = function(ns, tagName) {
+                doc.createElementNS = function (ns, tagName) {
                     return doc.createElement(tagName);
                 };
             }
@@ -256,8 +215,15 @@
             /**
              * Old IE polyfill for addEventListener, called from inside the addEvent
              * function.
+             *
+             * @private
+             * @function Highcharts.addEventListenerPolyfill
+             *
+             * @param {string} type
+             *
+             * @param {Function} fn
              */
-            H.addEventListenerPolyfill = function(type, fn) {
+            H.addEventListenerPolyfill = function (type, fn) {
                 var el = this;
 
                 function wrappedFn(e) {
@@ -283,7 +249,15 @@
                 }
 
             };
-            H.removeEventListenerPolyfill = function(type, fn) {
+            /**
+             * @private
+             * @function Highcharts.removeEventListenerPolyfill
+             *
+             * @param {string} type
+             *
+             * @param {Function} fn
+             */
+            H.removeEventListenerPolyfill = function (type, fn) {
                 if (this.detachEvent) {
                     fn = this.hcEventsIE[fn.hcKey];
                     this.detachEvent('on' + type, fn);
@@ -293,18 +267,28 @@
 
             /**
              * The VML element wrapper.
+             *
+             * @private
+             * @class
+             * @name Highcharts.VMLElement
+             *
+             * @augments Highcharts.SVGElement
              */
             VMLElement = {
 
                 docMode8: doc && doc.documentMode === 8,
 
                 /**
-                 * Initialize a new VML element wrapper. It builds the markup as a string
-                 * to minimize DOM traffic.
-                 * @param {Object} renderer
-                 * @param {Object} nodeName
+                 * Initialize a new VML element wrapper. It builds the markup as a
+                 * string to minimize DOM traffic.
+                 *
+                 * @function Highcharts.VMLElement#init
+                 *
+                 * @param {object} renderer
+                 *
+                 * @param {object} nodeName
                  */
-                init: function(renderer, nodeName) {
+                init: function (renderer, nodeName) {
                     var wrapper = this,
                         markup = ['<', nodeName, ' filled="f" stroked="f"'],
                         style = ['position: ', 'absolute', ';'],
@@ -331,9 +315,12 @@
 
                 /**
                  * Add the node to the given parent
-                 * @param {Object} parent
+                 *
+                 * @function Highcharts.VMLElement
+                 *
+                 * @param {object} parent
                  */
-                add: function(parent) {
+                add: function (parent) {
                     var wrapper = this,
                         renderer = wrapper.renderer,
                         element = wrapper.element,
@@ -342,8 +329,8 @@
 
                         // get the parent node
                         parentNode = parent ?
-                        parent.element || parent :
-                        box;
+                            parent.element || parent :
+                            box;
 
                     if (parent) {
                         this.parentGroup = parent;
@@ -368,7 +355,8 @@
                         wrapper.onAdd();
                     }
 
-                    // IE8 Standards can't set the class name before the element is appended
+                    // IE8 Standards can't set the class name before the element is
+                    // appended
                     if (this.className) {
                         this.attr('class', this.className);
                     }
@@ -378,25 +366,31 @@
 
                 /**
                  * VML always uses htmlUpdateTransform
+                 *
+                 * @function Highcharts.VMLElement#updateTransform
                  */
                 updateTransform: SVGElement.prototype.htmlUpdateTransform,
 
                 /**
                  * Set the rotation of a span with oldIE's filter
+                 *
+                 * @function Highcharts.VMLElement#setSpanRotation
                  */
-                setSpanRotation: function() {
-                    // Adjust for alignment and rotation. Rotation of useHTML content is not yet implemented
-                    // but it can probably be implemented for Firefox 3.5+ on user request. FF3.5+
-                    // has support for CSS3 transform. The getBBox method also needs to be updated
-                    // to compensate for the rotation, like it currently does for SVG.
-                    // Test case: http://jsfiddle.net/highcharts/Ybt44/
+                setSpanRotation: function () {
+                    // Adjust for alignment and rotation. Rotation of useHTML content is
+                    // not yet implemented but it can probably be implemented for
+                    // Firefox 3.5+ on user request. FF3.5+ has support for CSS3
+                    // transform. The getBBox method also needs to be updated to
+                    // compensate for the rotation, like it currently does for SVG.
+                    // Test case: https://jsfiddle.net/highcharts/Ybt44/
 
                     var rotation = this.rotation,
                         costheta = Math.cos(rotation * deg2rad),
                         sintheta = Math.sin(rotation * deg2rad);
 
                     css(this.element, {
-                        filter: rotation ? ['progid:DXImageTransform.Microsoft.Matrix(M11=', costheta,
+                        filter: rotation ? [
+                            'progid:DXImageTransform.Microsoft.Matrix(M11=', costheta,
                             ', M12=', -sintheta, ', M21=', sintheta, ', M22=', costheta,
                             ', sizingMethod=\'auto expand\')'
                         ].join('') : 'none'
@@ -405,8 +399,16 @@
 
                 /**
                  * Get the positioning correction for the span after rotating.
+                 *
+                 * @function Highcharts.VMLElement#getSpanCorrection
                  */
-                getSpanCorrection: function(width, baseline, alignCorrection, rotation, align) {
+                getSpanCorrection: function (
+                    width,
+                    baseline,
+                    alignCorrection,
+                    rotation,
+                    align
+                ) {
 
                     var costheta = rotation ? Math.cos(rotation * deg2rad) : 1,
                         sintheta = rotation ? Math.sin(rotation * deg2rad) : 0,
@@ -420,13 +422,25 @@
 
                     // correct for baseline and corners spilling out after rotation
                     quad = costheta * sintheta < 0;
-                    this.xCorr += sintheta * baseline * (quad ? 1 - alignCorrection : alignCorrection);
-                    this.yCorr -= costheta * baseline * (rotation ? (quad ? alignCorrection : 1 - alignCorrection) : 1);
+                    this.xCorr += (
+                        sintheta *
+                        baseline *
+                        (quad ? 1 - alignCorrection : alignCorrection)
+                    );
+                    this.yCorr -= (
+                        costheta *
+                        baseline *
+                        (rotation ? (quad ? alignCorrection : 1 - alignCorrection) : 1)
+                    );
                     // correct for the length/height of the text
                     if (nonLeft) {
                         this.xCorr -= width * alignCorrection * (costheta < 0 ? -1 : 1);
                         if (rotation) {
-                            this.yCorr -= height * alignCorrection * (sintheta < 0 ? -1 : 1);
+                            this.yCorr -= (
+                                height *
+                                alignCorrection *
+                                (sintheta < 0 ? -1 : 1)
+                            );
                         }
                         css(this.element, {
                             textAlign: align
@@ -435,10 +449,12 @@
                 },
 
                 /**
-                 * Converts a subset of an SVG path definition to its VML counterpart. Takes an array
-                 * as the parameter and returns a string.
+                 * Converts a subset of an SVG path definition to its VML counterpart.
+                 * Takes an array as the parameter and returns a string.
+                 *
+                 * @function Highcharts.VMLElement#pathToVML
                  */
-                pathToVML: function(value) {
+                pathToVML: function (value) {
                     // convert paths
                     var i = value.length,
                         path = [];
@@ -455,10 +471,14 @@
                         } else {
                             path[i] = value[i];
 
-                            // When the start X and end X coordinates of an arc are too close,
-                            // they are rounded to the same value above. In this case, substract or
-                            // add 1 from the end X and Y positions. #186, #760, #1371, #1410.
-                            if (value.isArc && (value[i] === 'wa' || value[i] === 'at')) {
+                            // When the start X and end X coordinates of an arc are too
+                            // close, they are rounded to the same value above. In this
+                            // case, substract or add 1 from the end X and Y positions.
+                            // #186, #760, #1371, #1410.
+                            if (
+                                value.isArc &&
+                                (value[i] === 'wa' || value[i] === 'at')
+                            ) {
                                 // Start and end X
                                 if (path[i + 5] === path[i + 7]) {
                                     path[i + 7] += value[i + 7] > value[i + 5] ? 1 : -1;
@@ -477,18 +497,22 @@
                 /**
                  * Set the element's clipping to a predefined rectangle
                  *
-                 * @param {String} id The id of the clip rectangle
+                 * @function Highcharts.VMLElement#clip
+                 *
+                 * @param {object} clipRect
                  */
-                clip: function(clipRect) {
+                clip: function (clipRect) {
                     var wrapper = this,
                         clipMembers,
                         cssRet;
 
                     if (clipRect) {
                         clipMembers = clipRect.members;
-                        erase(clipMembers, wrapper); // Ensure unique list of elements (#1258)
+
+                        // Ensure unique list of elements (#1258)
+                        erase(clipMembers, wrapper);
                         clipMembers.push(wrapper);
-                        wrapper.destroyClip = function() {
+                        wrapper.destroyClip = function () {
                             erase(clipMembers, wrapper);
                         };
                         cssRet = clipRect.getCSS(wrapper);
@@ -508,17 +532,24 @@
 
                 /**
                  * Set styles for the element
-                 * @param {Object} styles
+                 *
+                 * @function Highcharts.VMLElement#css
+                 *
+                 * @param {Highcharts.SVGAttributes} styles
                  */
                 css: SVGElement.prototype.htmlCss,
 
                 /**
                  * Removes a child either by removeChild or move to garbageBin.
-                 * Issue 490; in VML removeChild results in Orphaned nodes according to sIEve, discardElement does not.
+                 * Issue 490; in VML removeChild results in Orphaned nodes according to
+                 * sIEve, discardElement does not.
+                 *
+                 * @function Highcharts.VMLElement#safeRemoveChild
                  */
-                safeRemoveChild: function(element) {
-                    // discardElement will detach the node from its parent before attaching it
-                    // to the garbage bin. Therefore it is important that the node is attached and have parent.
+                safeRemoveChild: function (element) {
+                    // discardElement will detach the node from its parent before
+                    // attaching it to the garbage bin. Therefore it is important that
+                    // the node is attached and have parent.
                     if (element.parentNode) {
                         discardElement(element);
                     }
@@ -526,8 +557,10 @@
 
                 /**
                  * Extend element.destroy by removing it from the clip members array
+                 *
+                 * @function Highcharts.VMLElement#destroy
                  */
-                destroy: function() {
+                destroy: function () {
                     if (this.destroyClip) {
                         this.destroyClip();
                     }
@@ -537,13 +570,18 @@
 
                 /**
                  * Add an event listener. VML override for normalizing event parameters.
-                 * @param {String} eventType
+                 *
+                 * @function Highcharts.VMLElement#on
+                 *
+                 * @param {string} eventType
+                 *
                  * @param {Function} handler
                  */
-                on: function(eventType, handler) {
+                on: function (eventType, handler) {
                     // simplest possible event model for internal use
-                    this.element['on' + eventType] = function() {
+                    this.element['on' + eventType] = function () {
                         var evt = win.event;
+
                         evt.target = evt.srcElement;
                         handler(evt);
                     };
@@ -552,25 +590,38 @@
 
                 /**
                  * In stacked columns, cut off the shadows so that they don't overlap
+                 *
+                 * @function Highcharts.VMLElement#cutOffPath
                  */
-                cutOffPath: function(path, length) {
+                cutOffPath: function (path, length) {
 
                     var len;
 
-                    path = path.split(/[ ,]/); // The extra comma tricks the trailing comma remover in "gulp scripts" task
+                    // The extra comma tricks the trailing comma remover in
+                    // "gulp scripts" task
+                    path = path.split(/[ ,]/);
                     len = path.length;
 
                     if (len === 9 || len === 11) {
-                        path[len - 4] = path[len - 2] = pInt(path[len - 2]) - 10 * length;
+                        path[len - 4] = path[len - 2] =
+                            pInt(path[len - 2]) - 10 * length;
                     }
                     return path.join(' ');
                 },
 
                 /**
-                 * Apply a drop shadow by copying elements and giving them different strokes
-                 * @param {Boolean|Object} shadowOptions
+                 * Apply a drop shadow by copying elements and giving them different
+                 * strokes.
+                 *
+                 * @function Highcharts.VMLElement#shadow
+                 *
+                 * @param {boolean|Highcharts.ShadowOptionsObject} shadowOptions
+                 *
+                 * @param {boolean} group
+                 *
+                 * @param {boolean} cutOff
                  */
-                shadow: function(shadowOptions, group, cutOff) {
+                shadow: function (shadowOptions, group, cutOff) {
                     var shadows = [],
                         i,
                         element = this.element,
@@ -592,25 +643,34 @@
 
                     if (shadowOptions) {
                         shadowWidth = pick(shadowOptions.width, 3);
-                        shadowElementOpacity = (shadowOptions.opacity || 0.15) / shadowWidth;
+                        shadowElementOpacity =
+                            (shadowOptions.opacity || 0.15) / shadowWidth;
                         for (i = 1; i <= 3; i++) {
 
                             strokeWidth = (shadowWidth * 2) + 1 - (2 * i);
 
                             // Cut off shadows for stacked column items
                             if (cutOff) {
-                                modifiedPath = this.cutOffPath(path.value, strokeWidth + 0.5);
+                                modifiedPath = this.cutOffPath(
+                                    path.value,
+                                    strokeWidth + 0.5
+                                );
                             }
 
-                            markup = ['<shape isShadow="true" strokeweight="', strokeWidth,
+                            markup = [
+                                '<shape isShadow="true" strokeweight="', strokeWidth,
                                 '" filled="false" path="', modifiedPath,
-                                '" coordsize="10 10" style="', element.style.cssText, '" />'
+                                '" coordsize="10 10" style="', element.style.cssText,
+                                '" />'
                             ];
 
-                            shadow = createElement(renderer.prepVML(markup),
+                            shadow = createElement(
+                                renderer.prepVML(markup),
                                 null, {
-                                    left: pInt(elemStyle.left) + pick(shadowOptions.offsetX, 1),
-                                    top: pInt(elemStyle.top) + pick(shadowOptions.offsetY, 1)
+                                    left: pInt(elemStyle.left) +
+                                        pick(shadowOptions.offsetX, 1),
+                                    top: pInt(elemStyle.top) +
+                                        pick(shadowOptions.offsetY, 1)
                                 }
                             );
                             if (cutOff) {
@@ -621,8 +681,7 @@
                             markup = [
                                 '<stroke color="',
                                 shadowOptions.color || '#000000',
-                                '" opacity="', shadowElementOpacity * i, '"/>'
-                            ];
+                                '" opacity="', shadowElementOpacity * i, '"/>'];
                             createElement(renderer.prepVML(markup), null, null, shadow);
 
 
@@ -644,31 +703,46 @@
                 },
                 updateShadows: noop, // Used in SVG only
 
-                setAttr: function(key, value) {
+                setAttr: function (key, value) {
                     if (this.docMode8) { // IE8 setAttribute bug
                         this.element[key] = value;
                     } else {
                         this.element.setAttribute(key, value);
                     }
                 },
-                classSetter: function(value) {
-                    // IE8 Standards mode has problems retrieving the className unless set like this.
-                    // IE8 Standards can't set the class name before the element is appended.
+                getAttr: function (key) {
+                    if (this.docMode8) { // IE8 setAttribute bug
+                        return this.element[key];
+                    }
+                    return this.element.getAttribute(key);
+                },
+                classSetter: function (value) {
+                    // IE8 Standards mode has problems retrieving the className unless
+                    // set like this. IE8 Standards can't set the class name before the
+                    // element is appended.
                     (this.added ? this.element : this).className = value;
                 },
-                dashstyleSetter: function(value, key, element) {
+                dashstyleSetter: function (value, key, element) {
                     var strokeElem = element.getElementsByTagName('stroke')[0] ||
-                        createElement(this.renderer.prepVML(['<stroke/>']), null, null, element);
+                        createElement(
+                            this.renderer.prepVML(['<stroke/>']),
+                            null,
+                            null,
+                            element
+                        );
+
                     strokeElem[key] = value || 'solid';
+                    // Because changing stroke-width will change the dash length and
+                    // cause an epileptic effect
                     this[key] = value;
-                    /* because changing stroke-width will change the dash length
-				and cause an epileptic effect */
                 },
-                dSetter: function(value, key, element) {
+                dSetter: function (value, key, element) {
                     var i,
                         shadows = this.shadows;
+
                     value = value || [];
-                    this.d = value.join && value.join(' '); // used in getter for animation
+                    // Used in getter for animation
+                    this.d = value.join && value.join(' ');
 
                     element.path = value = this.pathToVML(value);
 
@@ -676,41 +750,55 @@
                     if (shadows) {
                         i = shadows.length;
                         while (i--) {
-                            shadows[i].path = shadows[i].cutOff ? this.cutOffPath(value, shadows[i].cutOff) : value;
+                            shadows[i].path = shadows[i].cutOff ?
+                                this.cutOffPath(value, shadows[i].cutOff) :
+                                value;
                         }
                     }
                     this.setAttr(key, value);
                 },
-                fillSetter: function(value, key, element) {
+                fillSetter: function (value, key, element) {
                     var nodeName = element.nodeName;
+
                     if (nodeName === 'SPAN') { // text color
                         element.style.color = value;
                     } else if (nodeName !== 'IMG') { // #1336
                         element.filled = value !== 'none';
-                        this.setAttr('fillcolor', this.renderer.color(value, element, key, this));
+                        this.setAttr(
+                            'fillcolor',
+                            this.renderer.color(value, element, key, this)
+                        );
                     }
                 },
-                'fill-opacitySetter': function(value, key, element) {
+                'fill-opacitySetter': function (value, key, element) {
                     createElement(
-                        this.renderer.prepVML(['<', key.split('-')[0], ' opacity="', value, '"/>']),
+                        this.renderer.prepVML(
+                            ['<', key.split('-')[0], ' opacity="', value, '"/>']
+                        ),
                         null,
                         null,
                         element
                     );
                 },
-                opacitySetter: noop, // Don't bother - animation is too slow and filters introduce artifacts
-                rotationSetter: function(value, key, element) {
+                // Don't bother - animation is too slow and filters introduce artifacts
+                opacitySetter: noop,
+                rotationSetter: function (value, key, element) {
                     var style = element.style;
+
                     this[key] = style[key] = value; // style is for #1873
 
-                    // Correction for the 1x1 size of the shape container. Used in gauge needles.
+                    // Correction for the 1x1 size of the shape container. Used in gauge
+                    // needles.
                     style.left = -Math.round(Math.sin(value * deg2rad) + 1) + 'px';
                     style.top = Math.round(Math.cos(value * deg2rad)) + 'px';
                 },
-                strokeSetter: function(value, key, element) {
-                    this.setAttr('strokecolor', this.renderer.color(value, element, key, this));
+                strokeSetter: function (value, key, element) {
+                    this.setAttr(
+                        'strokecolor',
+                        this.renderer.color(value, element, key, this)
+                    );
                 },
-                'stroke-widthSetter': function(value, key, element) {
+                'stroke-widthSetter': function (value, key, element) {
                     element.stroked = !!value; // VML "stroked" attribute
                     this[key] = value; // used in getter, issue #113
                     if (isNumber(value)) {
@@ -718,10 +806,10 @@
                     }
                     this.setAttr('strokeweight', value);
                 },
-                titleSetter: function(value, key) {
+                titleSetter: function (value, key) {
                     this.setAttr(key, value);
                 },
-                visibilitySetter: function(value, key, element) {
+                visibilitySetter: function (value, key, element) {
 
                     // Handle inherited visibility
                     if (value === 'inherit') {
@@ -730,19 +818,20 @@
 
                     // Let the shadow follow the main element
                     if (this.shadows) {
-                        each(this.shadows, function(shadow) {
+                        this.shadows.forEach(function (shadow) {
                             shadow.style[key] = value;
                         });
                     }
 
-                    // Instead of toggling the visibility CSS property, move the div out of the viewport.
-                    // This works around #61 and #586
+                    // Instead of toggling the visibility CSS property, move the div out
+                    // of the viewport. This works around #61 and #586
                     if (element.nodeName === 'DIV') {
                         value = value === 'hidden' ? '-999em' : 0;
 
-                        // In order to redraw, IE7 needs the div to be visible when tucked away
-                        // outside the viewport. So the visibility is actually opposite of
-                        // the expected value. This applies to the tooltip only.
+                        // In order to redraw, IE7 needs the div to be visible when
+                        // tucked away outside the viewport. So the visibility is
+                        // actually opposite of the expected value. This applies to the
+                        // tooltip only.
                         if (!this.docMode8) {
                             element.style[key] = value ? 'visible' : 'hidden';
                         }
@@ -750,7 +839,7 @@
                     }
                     element.style[key] = value;
                 },
-                xSetter: function(value, key, element) {
+                xSetter: function (value, key, element) {
                     this[key] = value; // used in getter
 
                     if (key === 'x') {
@@ -758,21 +847,29 @@
                     } else if (key === 'y') {
                         key = 'top';
                     }
-                    /* else {
-                    				value = Math.max(0, value); // don't set width or height below zero (#311)
-                    			}*/
 
                     // clipping rectangle special
                     if (this.updateClipping) {
-                        this[key] = value; // the key is now 'left' or 'top' for 'x' and 'y'
+                        // the key is now 'left' or 'top' for 'x' and 'y'
+                        this[key] = value;
                         this.updateClipping();
                     } else {
                         // normal
                         element.style[key] = value;
                     }
                 },
-                zIndexSetter: function(value, key, element) {
+                zIndexSetter: function (value, key, element) {
                     element.style[key] = value;
+                },
+                fillGetter: function () {
+                    return this.getAttr('fillcolor') || '';
+                },
+                strokeGetter: function () {
+                    return this.getAttr('strokecolor') || '';
+                },
+                // #7850
+                classGetter: function () {
+                    return this.getAttr('className') || '';
                 }
             };
             VMLElement['stroke-opacitySetter'] = VMLElement['fill-opacitySetter'];
@@ -787,6 +884,12 @@
 
             /**
              * The VML renderer
+             *
+             * @private
+             * @class
+             * @name Highcharts.VMLRenderer
+             *
+             * @augments Highcharts.SVGRenderer
              */
             VMLRendererExtension = { // inherit SVGRenderer
 
@@ -795,12 +898,17 @@
 
 
                 /**
-                 * Initialize the VMLRenderer
-                 * @param {Object} container
-                 * @param {Number} width
-                 * @param {Number} height
+                 * Initialize the VMLRenderer.
+                 *
+                 * @function Highcharts.VMLRenderer#init
+                 *
+                 * @param {object} container
+                 *
+                 * @param {number} width
+                 *
+                 * @param {number} height
                  */
-                init: function(container, width, height) {
+                init: function (container, width, height) {
                     var renderer = this,
                         boxWrapper,
                         box,
@@ -809,9 +917,7 @@
                     renderer.alignedObjects = [];
 
                     boxWrapper = renderer.createElement('div')
-                        .css({
-                            position: 'relative'
-                        });
+                        .css({ position: 'relative' });
                     box = boxWrapper.element;
                     container.appendChild(boxWrapper.element);
 
@@ -828,9 +934,10 @@
 
                     renderer.setSize(width, height, false);
 
-                    // The only way to make IE6 and IE7 print is to use a global namespace. However,
-                    // with IE8 the only way to make the dynamic shapes visible in screen and print mode
-                    // seems to be to add the xmlns attribute and the behaviour style inline.
+                    // The only way to make IE6 and IE7 print is to use a global
+                    // namespace. However, with IE8 the only way to make the dynamic
+                    // shapes visible in screen and print mode seems to be to add the
+                    // xmlns attribute and the behaviour style inline.
                     if (!doc.namespaces.hcv) {
 
                         doc.namespaces.add('hcv', 'urn:schemas-microsoft-com:vml');
@@ -849,29 +956,37 @@
 
 
                 /**
-                 * Detect whether the renderer is hidden. This happens when one of the parent elements
-                 * has display: none
+                 * Detect whether the renderer is hidden. This happens when one of the
+                 * parent elements has display: none
+                 *
+                 * @function Highcharts.VMLRenderer#isHidden
                  */
-                isHidden: function() {
+                isHidden: function () {
                     return !this.box.offsetWidth;
                 },
 
                 /**
-                 * Define a clipping rectangle. In VML it is accomplished by storing the values
-                 * for setting the CSS style to all associated members.
+                 * Define a clipping rectangle. In VML it is accomplished by storing the
+                 * values for setting the CSS style to all associated members.
                  *
-                 * @param {Number} x
-                 * @param {Number} y
-                 * @param {Number} width
-                 * @param {Number} height
+                 * @function Highcharts.VMLRenderer#clipRect
+                 *
+                 * @param {number} x
+                 *
+                 * @param {number} y
+                 *
+                 * @param {number} width
+                 *
+                 * @param {number} height
                  */
-                clipRect: function(x, y, width, height) {
+                clipRect: function (x, y, width, height) {
 
                     // create a dummy element
                     var clipRect = this.createElement(),
                         isObj = isObject(x);
 
-                    // mimic a rectangle with its style object for automatic updating in attr
+                    // mimic a rectangle with its style object for automatic updating in
+                    // attr
                     return extend(clipRect, {
                         members: [],
                         count: 0,
@@ -879,7 +994,7 @@
                         top: (isObj ? x.y : y) + 1,
                         width: (isObj ? x.width : width) - 1,
                         height: (isObj ? x.height : height) - 1,
-                        getCSS: function(wrapper) {
+                        getCSS: function (wrapper) {
                             var element = wrapper.element,
                                 nodeName = element.nodeName,
                                 isShape = nodeName === 'shape',
@@ -907,9 +1022,10 @@
                             return ret;
                         },
 
-                        // used in attr and animation to update the clipping of all members
-                        updateClipping: function() {
-                            each(clipRect.members, function(member) {
+                        // used in attr and animation to update the clipping of all
+                        // members
+                        updateClipping: function () {
+                            clipRect.members.forEach(function (member) {
                                 // Member.element is falsy on deleted series, like in
                                 // stock/members/series-remove demo. Should be removed
                                 // from members, but this will do.
@@ -924,12 +1040,15 @@
 
 
                 /**
-                 * Take a color and return it if it's a string, make it a gradient if it's a
-                 * gradient configuration object, and apply opacity.
+                 * Take a color and return it if it's a string, make it a gradient if
+                 * it's a gradient configuration object, and apply opacity.
                  *
-                 * @param {Object} color The color or config object
+                 * @function Highcharts.VMLRenderer#color
+                 *
+                 * @param {object} color
+                 *        The color or config object
                  */
-                color: function(color, elem, prop, wrapper) {
+                color: function (color, elem, prop, wrapper) {
                     var renderer = this,
                         colorObject,
                         regexRgba = /^rgba/,
@@ -963,15 +1082,19 @@
                             firstStop,
                             lastStop,
                             colors = [],
-                            addFillNode = function() {
-                                // Add the fill subnode. When colors attribute is used, the meanings of opacity and o:opacity2
-                                // are reversed.
+                            addFillNode = function () {
+                                // Add the fill subnode. When colors attribute is used,
+                                // the meanings of opacity and o:opacity2 are reversed.
                                 markup = ['<fill colors="' + colors.join(',') +
                                     '" opacity="', opacity2, '" o:opacity2="',
-                                    opacity1, '" type="', fillType, '" ', fillAttr,
-                                    'focus="100%" method="any" />'
-                                ];
-                                createElement(renderer.prepVML(markup), null, null, elem);
+                                opacity1, '" type="', fillType, '" ', fillAttr,
+                                'focus="100%" method="any" />'];
+                                createElement(
+                                    renderer.prepVML(markup),
+                                    null,
+                                    null,
+                                    elem
+                                );
                             };
 
                         // Extend from 0 to 1
@@ -991,7 +1114,7 @@
                         }
 
                         // Compute the stops
-                        each(stops, function(stop, i) {
+                        stops.forEach(function (stop, i) {
                             if (regexRgba.test(stop[1])) {
                                 colorObject = H.color(stop[1]);
                                 stopColor = colorObject.get('rgb');
@@ -1004,7 +1127,8 @@
                             // Build the color attribute
                             colors.push((stop[0] * 100) + '% ' + stopColor);
 
-                            // Only start and end opacities are allowed, so we use the first and the last
+                            // Only start and end opacities are allowed, so we use the
+                            // first and the last
                             if (!i) {
                                 opacity1 = stopOpacity;
                                 color2 = stopColor;
@@ -1030,7 +1154,7 @@
 
                                 addFillNode();
 
-                                // Radial (circular) gradient
+                            // Radial (circular) gradient
                             } else {
 
                                 var r = gradient.r,
@@ -1040,15 +1164,19 @@
                                     cy = gradient.cy,
                                     radialReference = elem.radialReference,
                                     bBox,
-                                    applyRadialGradient = function() {
+                                    applyRadialGradient = function () {
                                         if (radialReference) {
                                             bBox = wrapper.getBBox();
-                                            cx += (radialReference[0] - bBox.x) / bBox.width - 0.5;
-                                            cy += (radialReference[1] - bBox.y) / bBox.height - 0.5;
+                                            cx += (radialReference[0] - bBox.x) /
+                                                bBox.width - 0.5;
+                                            cy += (radialReference[1] - bBox.y) /
+                                                bBox.height - 0.5;
                                             sizex *= radialReference[2] / bBox.width;
                                             sizey *= radialReference[2] / bBox.height;
                                         }
-                                        fillAttr = 'src="' + H.getOptions().global.VMLRadialGradientURL + '" ' +
+                                        fillAttr = 'src="' +
+                                            H.getOptions().global.VMLRadialGradientURL +
+                                            '" ' +
                                             'size="' + sizex + ',' + sizey + '" ' +
                                             'origin="0.5,0.5" ' +
                                             'position="' + cx + ',' + cy + '" ' +
@@ -1061,33 +1189,42 @@
                                 if (wrapper.added) {
                                     applyRadialGradient();
                                 } else {
-                                    // We need to know the bounding box to get the size and position right
+                                    // We need to know the bounding box to get the size
+                                    // and position right
                                     wrapper.onAdd = applyRadialGradient;
                                 }
 
-                                // The fill element's color attribute is broken in IE8 standards mode, so we
-                                // need to set the parent shape's fillcolor attribute instead.
+                                // The fill element's color attribute is broken in IE8
+                                // standards mode, so we need to set the parent shape's
+                                // fillcolor attribute instead.
                                 ret = color1;
                             }
 
-                            // Gradients are not supported for VML stroke, return the first color. #722.
+                        // Gradients are not supported for VML stroke, return the first
+                        // color. #722.
                         } else {
                             ret = stopColor;
                         }
 
-                        // If the color is an rgba color, split it and add a fill node
-                        // to hold the opacity component
+                    // If the color is an rgba color, split it and add a fill node
+                    // to hold the opacity component
                     } else if (regexRgba.test(color) && elem.tagName !== 'IMG') {
 
                         colorObject = H.color(color);
 
-                        wrapper[prop + '-opacitySetter'](colorObject.get('a'), prop, elem);
+                        wrapper[prop + '-opacitySetter'](
+                            colorObject.get('a'),
+                            prop,
+                            elem
+                        );
 
                         ret = colorObject.get('rgb');
 
 
                     } else {
-                        var propNodes = elem.getElementsByTagName(prop); // 'stroke' or 'fill' node
+                        // 'stroke' or 'fill' node
+                        var propNodes = elem.getElementsByTagName(prop);
+
                         if (propNodes.length) {
                             propNodes[0].opacity = 1;
                             propNodes[0].type = 'solid';
@@ -1100,18 +1237,28 @@
 
                 /**
                  * Take a VML string and prepare it for either IE8 or IE6/IE7.
-                 * @param {Array} markup A string array of the VML markup to prepare
+                 *
+                 * @function Highcharts.VMLRenderer#prepVML
+                 *
+                 * @param {Array<*>} markup
+                 *        A string array of the VML markup to prepare
                  */
-                prepVML: function(markup) {
+                prepVML: function (markup) {
                     var vmlStyle = 'display:inline-block;behavior:url(#default#VML);',
                         isIE8 = this.isIE8;
 
                     markup = markup.join('');
 
                     if (isIE8) { // add xmlns and style inline
-                        markup = markup.replace('/>', ' xmlns="urn:schemas-microsoft-com:vml" />');
+                        markup = markup.replace(
+                            '/>',
+                            ' xmlns="urn:schemas-microsoft-com:vml" />'
+                        );
                         if (markup.indexOf('style="') === -1) {
-                            markup = markup.replace('/>', ' style="' + vmlStyle + '" />');
+                            markup = markup.replace(
+                                '/>',
+                                ' style="' + vmlStyle + '" />'
+                            );
                         } else {
                             markup = markup.replace('style="', 'style="' + vmlStyle);
                         }
@@ -1125,21 +1272,30 @@
 
                 /**
                  * Create rotated and aligned text
-                 * @param {String} str
-                 * @param {Number} x
-                 * @param {Number} y
+                 *
+                 * @function Highcharts.VMLRenderer#text
+                 *
+                 * @param {string} str
+                 *
+                 * @param {number} x
+                 *
+                 * @param {number} y
                  */
                 text: SVGRenderer.prototype.html,
 
                 /**
                  * Create and return a path element
-                 * @param {Array} path
+                 *
+                 * @function Highcharts.VMLRenderer#path
+                 *
+                 * @param {Highcharts.SVGPathArray} path
                  */
-                path: function(path) {
+                path: function (path) {
                     var attr = {
                         // subpixel precision down to 0.1 (width and height = 1px)
                         coordsize: '10 10'
                     };
+
                     if (isArray(path)) {
                         attr.d = path;
                     } else if (isObject(path)) { // attributes
@@ -1152,12 +1308,18 @@
                 /**
                  * Create and return a circle element. In VML circles are implemented as
                  * shapes, which is faster than v:oval
-                 * @param {Number} x
-                 * @param {Number} y
-                 * @param {Number} r
+                 *
+                 * @function Highcharts.VMLRenderer#circle
+                 *
+                 * @param {number} x
+                 *
+                 * @param {number} y
+                 *
+                 * @param {number} r
                  */
-                circle: function(x, y, r) {
+                circle: function (x, y, r) {
                     var circle = this.symbol('circle');
+
                     if (isObject(x)) {
                         r = x.r;
                         y = x.y;
@@ -1165,20 +1327,20 @@
                     }
                     circle.isCircle = true; // Causes x and y to mean center (#1682)
                     circle.r = r;
-                    return circle.attr({
-                        x: x,
-                        y: y
-                    });
+                    return circle.attr({ x: x, y: y });
                 },
 
                 /**
-                 * Create a group using an outer div and an inner v:group to allow rotating
-                 * and flipping. A simple v:group would have problems with positioning
-                 * child HTML elements and CSS clip.
+                 * Create a group using an outer div and an inner v:group to allow
+                 * rotating and flipping. A simple v:group would have problems with
+                 * positioning child HTML elements and CSS clip.
                  *
-                 * @param {String} name The name of the group
+                 * @function Highcharts.VMLRenderer#g
+                 *
+                 * @param {string} name
+                 *        The name of the group
                  */
-                g: function(name) {
+                g: function (name) {
                     var wrapper,
                         attribs;
 
@@ -1197,18 +1359,23 @@
                 },
 
                 /**
-                 * VML override to create a regular HTML image
-                 * @param {String} src
-                 * @param {Number} x
-                 * @param {Number} y
-                 * @param {Number} width
-                 * @param {Number} height
+                 * VML override to create a regular HTML image.
+                 *
+                 * @function Highcharts.VMLRenderer#image
+                 *
+                 * @param {string} src
+                 *
+                 * @param {number} x
+                 *
+                 * @param {number} y
+                 *
+                 * @param {number} width
+                 *
+                 * @param {number} height
                  */
-                image: function(src, x, y, width, height) {
+                image: function (src, x, y, width, height) {
                     var obj = this.createElement('img')
-                        .attr({
-                            src: src
-                        });
+                        .attr({ src: src });
 
                     if (arguments.length > 1) {
                         obj.attr({
@@ -1222,34 +1389,46 @@
                 },
 
                 /**
-                 * For rectangles, VML uses a shape for rect to overcome bugs and rotation problems
+                 * For rectangles, VML uses a shape for rect to overcome bugs and
+                 * rotation problems
+                 *
+                 * @function Highcharts.VMLRenderer#createElement
+                 *
+                 * @param {string} nodeName
                  */
-                createElement: function(nodeName) {
+                createElement: function (nodeName) {
                     return nodeName === 'rect' ?
                         this.symbol(nodeName) :
                         SVGRenderer.prototype.createElement.call(this, nodeName);
                 },
 
                 /**
-                 * In the VML renderer, each child of an inverted div (group) is inverted
-                 * @param {Object} element
-                 * @param {Object} parentNode
+                 * In the VML renderer, each child of an inverted div (group) is
+                 * inverted
+                 *
+                 * @function Highcharts.VMLRenderer#invertChild
+                 *
+                 * @param {object} element
+                 *
+                 * @param {object} parentNode
                  */
-                invertChild: function(element, parentNode) {
+                invertChild: function (element, parentNode) {
                     var ren = this,
                         parentStyle = parentNode.style,
                         imgStyle = element.tagName === 'IMG' && element.style; // #1111
 
                     css(element, {
                         flip: 'x',
-                        left: pInt(parentStyle.width) - (imgStyle ? pInt(imgStyle.top) : 1),
-                        top: pInt(parentStyle.height) - (imgStyle ? pInt(imgStyle.left) : 1),
+                        left: pInt(parentStyle.width) -
+                            (imgStyle ? pInt(imgStyle.top) : 1),
+                        top: pInt(parentStyle.height) -
+                            (imgStyle ? pInt(imgStyle.left) : 1),
                         rotation: -90
                     });
 
                     // Recursively invert child elements, needed for nested composite
                     // shapes like box plots and error bars. #1680, #1806.
-                    each(element.childNodes, function(child) {
+                    [].forEach.call(element.childNodes, function (child) {
                         ren.invertChild(child, element);
                     });
                 },
@@ -1257,10 +1436,12 @@
                 /**
                  * Symbol definitions that override the parent SVG renderer's symbols
                  *
+                 * @name Highcharts.VMLRenderer#symbols
+                 * @type {Highcharts.Dictionary<Function>}
                  */
                 symbols: {
                     // VML specific arc function
-                    arc: function(x, y, w, h, options) {
+                    arc: function (x, y, w, h, options) {
                         var start = options.start,
                             end = options.end,
                             radius = options.r || w || h,
@@ -1314,8 +1495,9 @@
                         return ret;
 
                     },
-                    // Add circle symbol path. This performs significantly faster than v:oval.
-                    circle: function(x, y, w, h, wrapper) {
+                    // Add circle symbol path. This performs significantly faster than
+                    // v:oval.
+                    circle: function (x, y, w, h, wrapper) {
 
                         if (wrapper && defined(wrapper.r)) {
                             w = h = 2 * wrapper.r;
@@ -1342,16 +1524,19 @@
                         ];
                     },
                     /**
-                     * Add rectangle symbol path which eases rotation and omits arcsize problems
-                     * compared to the built-in VML roundrect shape. When borders are not rounded,
-                     * use the simpler square path, else use the callout path without the arrow.
+                     * Add rectangle symbol path which eases rotation and omits arcsize
+                     * problems compared to the built-in VML roundrect shape. When
+                     * borders are not rounded, use the simpler square path, else use
+                     * the callout path without the arrow.
                      */
-                    rect: function(x, y, w, h, options) {
-                        return SVGRenderer.prototype.symbols[!defined(options) || !options.r ? 'square' : 'callout'].call(0, x, y, w, h, options);
+                    rect: function (x, y, w, h, options) {
+                        return SVGRenderer.prototype.symbols[
+                            !defined(options) || !options.r ? 'square' : 'callout'
+                        ].call(0, x, y, w, h, options);
                     }
                 }
             };
-            H.VMLRenderer = VMLRenderer = function() {
+            H.VMLRenderer = VMLRenderer = function () {
                 this.init.apply(this, arguments);
             };
             VMLRenderer.prototype = merge(SVGRenderer.prototype, VMLRendererExtension);
@@ -1360,8 +1545,23 @@
             H.Renderer = VMLRenderer;
         }
 
+        SVGRenderer.prototype.getSpanWidth = function (wrapper, tspan) {
+            var renderer = this,
+                bBox = wrapper.getBBox(true),
+                actualWidth = bBox.width;
+
+            // Old IE cannot measure the actualWidth for SVG elements (#2314)
+            if (!svg && renderer.forExport) {
+                actualWidth = renderer.measureSpanWidth(
+                    tspan.firstChild.data,
+                    wrapper.styles
+                );
+            }
+            return actualWidth;
+        };
+
         // This method is used with exporting in old IE, when emulating SVG (see #2314)
-        SVGRenderer.prototype.measureSpanWidth = function(text, styles) {
+        SVGRenderer.prototype.measureSpanWidth = function (text, styles) {
             var measuringSpan = doc.createElement('span'),
                 offsetWidth,
                 textNode = doc.createTextNode(text);
@@ -1374,7 +1574,9 @@
             return offsetWidth;
         };
 
-
-
     }(Highcharts));
+    return (function () {
+
+
+    }());
 }));
